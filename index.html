@@ -94,7 +94,10 @@ input:focus,select:focus{border-color:var(--accent)}
 .ar .h{font-size:12px;font-weight:600;color:var(--muted)}
 .ar .err{font-size:12.5px;white-space:nowrap}
 
-.examples{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.examples{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;font-size:13px;color:var(--muted)}
+.exsel{min-width:190px}
+.btn.danger{color:var(--l4);border-color:color-mix(in srgb,var(--l4) 45%,var(--line))}
+.btn.danger:hover{background:var(--l4s);border-color:var(--l4)}
 .examples button{border:1px solid var(--line);background:var(--surface);padding:4px 10px;border-radius:999px;cursor:pointer;font-size:13px}
 .examples button:hover{border-color:var(--accent);color:var(--accent)}
 .examples button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
@@ -189,14 +192,15 @@ tr:last-child td{border-bottom:0}
 .sheet h1{font-family:"Chulabhorn Likit Display","Chulabhorn Likit Text","Sarabun",sans-serif;font-size:17pt;font-weight:500;margin:0 0 2pt}
 .sheet h2{font-family:"Chulabhorn Likit Display","Chulabhorn Likit Text","Sarabun",sans-serif;font-size:13.5pt;font-weight:500;margin:6pt 0 3pt}
 .sheet .lead{margin:0 0 6pt}
-.sheet table{width:100%;border-collapse:separate;border-spacing:0;font-size:10pt;table-layout:fixed;border-top:1px solid var(--p-line);border-left:1px solid var(--p-line)}
-.sheet td,.sheet th{border-width:0 1px 1px 0!important;border-style:solid!important;border-color:var(--p-line)!important}
+.sheet table{width:100%;border-collapse:collapse;font-size:10pt;table-layout:fixed}
+.sheet td,.sheet th{border:1px solid var(--p-line)!important}
+.sheet{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .sheet td,.sheet th{border:1px solid var(--p-line);padding:2.5pt 6pt;vertical-align:top;text-align:left;background:none;color:var(--p-ink);font-weight:400;white-space:normal}
 .sheet th{font-weight:400}
 .sheet .stk{width:35%;text-align:left}
 .sheet .stk div{margin-bottom:2pt}
 .sheet .sticker{vertical-align:top;padding:0!important}
-.sheet .stz{height:1.6in;margin:4pt;border:1px dashed #9A9A9A;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#8A8A8A;padding:4pt}
+.sheet .stz{height:1.72in;margin:4pt;border:1px dashed #9A9A9A;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#8A8A8A;padding:4pt}
 .sheet .nsg{border-top:1px solid var(--p-line);padding:3pt 8pt 4pt;font-size:9.5pt}
 .sheet .nsg .ln{border-bottom:1px solid var(--p-ink);height:16pt}
 .sheet .nsg .pn{display:flex;align-items:flex-end;gap:2pt;margin-top:2pt}
@@ -217,15 +221,24 @@ tr:last-child td{border-bottom:0}
 .sheet .foot{margin-top:6pt;font-size:8.5pt;color:var(--p-mute)}
 .sheet .blank{height:34pt}
 @media print{
-  @page{size:A4;margin:0}
-  body{background:#fff!important}
+  @page{size:A4;margin:10mm}
+  html,body{height:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
+  :root{padding:0!important}
   body::before{display:none!important}
   body>*:not(#printModal){display:none!important}
-  :root{padding:0!important}
-  .pm{position:static!important;background:none!important;display:block!important}
+  .pm{position:static!important;inset:auto!important;height:auto!important;background:none!important;display:block!important}
   .pm-bar{display:none!important}
-  .pm-scroll{overflow:visible!important;padding:0!important}
-  .sheet{box-shadow:none!important;margin:0!important;min-height:0!important;width:auto!important}
+  .pm-scroll{overflow:visible!important;padding:0!important;height:auto!important}
+  .sheet{box-shadow:none!important;margin:0!important;padding:0!important;min-height:0!important;width:auto!important;break-inside:avoid;font-size:9.5pt;line-height:1.35}
+  .sheet table{font-size:9.5pt;width:calc(100% - 2px)!important;margin-left:1px!important}
+  .sheet{padding:1px!important}
+  .sheet h1{font-size:16pt!important}
+  .sheet h2{font-size:12.5pt!important;margin:4pt 0 2pt!important}
+  .sheet td,.sheet th{padding:2pt 5pt!important}
+  .sheet .stz{height:1.6in!important}
+  .sheet .blank{height:30pt!important}
+  .sheet .sign{margin-top:8pt!important}
+  .sheet{page-break-inside:avoid;break-after:avoid;page-break-after:avoid}
 }
 </style>
 </head>
@@ -256,14 +269,18 @@ tr:last-child td{border-bottom:0}
       <h2>ลงผลตรวจตา</h2>
       <p>กรอกผลแล้วระบบแปลผลทันทีทางขวา ระดับสูงสุดที่พบเป็นตัวกำหนดการจัดการ</p>
     </div>
-    <div class="examples" role="group" aria-label="โหลดเคสตัวอย่าง">
-      <span>เคสตัวอย่าง:</span>
-      <button type="button" data-ex="normal">ปกติ</button>
-      <button type="button" data-ex="advice">แนะนำ</button>
-      <button type="button" data-ex="routine">นัดหมาย</button>
-      <button type="button" data-ex="urgent">เร่งด่วน</button>
-      <button type="button" data-ex="emergency">ฉุกเฉิน</button>
-      <button type="button" id="reset" class="btn small">ล้างฟอร์ม</button>
+    <div class="examples">
+      <label class="f exsel" for="exSel">เคสตัวอย่างสำหรับทดลอง
+        <select id="exSel">
+          <option value="">— ไม่ใช้ —</option>
+          <option value="normal">ปกติ</option>
+          <option value="advice">แนะนำ / ติดตาม</option>
+          <option value="routine">นัดหมาย</option>
+          <option value="urgent">เร่งด่วน</option>
+          <option value="emergency">ฉุกเฉิน</option>
+        </select>
+      </label>
+      <button type="button" class="btn danger" data-reset>ล้างข้อมูล เริ่มรายใหม่</button>
     </div>
   </div>
 
@@ -384,6 +401,7 @@ tr:last-child td{border-bottom:0}
       <div class="row">
         <button type="button" class="btn primary" id="addToday">เพิ่มเข้ารายการวันนี้</button>
         <button type="button" class="btn" id="openPrint">พิมพ์แบบสรุปผลให้จักษุแพทย์</button>
+        <button type="button" class="btn danger" data-reset>ล้างข้อมูล เริ่มรายใหม่</button>
         <span class="toast" id="toast" role="status"></span>
       </div>
     </aside>
@@ -838,14 +856,17 @@ function load(key){
   clearForm(); const x=EX[key];
   Object.entries(x).forEach(([k,v])=>{const el=$(k);if(!el)return;if(el.type==='checkbox')el.checked=!!v;else el.value=v});
   updColMax();
-  document.querySelectorAll('[data-ex]').forEach(b=>b.classList.toggle('on',b.dataset.ex===key));
+  $('exSel').value=key;
   $('exTag').hidden=false; render();
 }
 function updColMax(){const m=ED[$('col_ed').value].max;document.querySelectorAll('.col_max').forEach(e=>e.textContent='/'+m);$('col_n_od').max=m;$('col_n_os').max=m}
-document.querySelectorAll('[data-ex]').forEach(b=>b.addEventListener('click',()=>load(b.dataset.ex)));
-$('reset').addEventListener('click',()=>{clearForm();document.querySelectorAll('[data-ex]').forEach(b=>b.classList.remove('on'));$('exTag').hidden=true;render()});
+$('exSel').addEventListener('change',()=>{const k=$('exSel').value;if(k)load(k);else resetAll(false)});
+function resetAll(scroll){clearForm();$('exSel').value='';$('exTag').hidden=true;render();if(scroll){window.scrollTo(0,0);try{$('hn').focus({preventScroll:true})}catch(e){}}toast('ล้างข้อมูลแล้ว')}
+document.querySelectorAll('[data-reset]').forEach(b=>b.addEventListener('click',()=>resetAll(true)));
 $('col_ed').addEventListener('change',updColMax);
-$('form').addEventListener('input',()=>{$('exTag').hidden=true;document.querySelectorAll('[data-ex]').forEach(b=>b.classList.remove('on'));render()});
+const onEdit=()=>{$('exTag').hidden=true;$('exSel').value='';render()};
+$('form').addEventListener('input',onEdit);
+$('form').addEventListener('change',onEdit);
 $('form').addEventListener('submit',e=>e.preventDefault());
 
 /* ---------- copy ---------- */
@@ -970,7 +991,7 @@ function route(){
 window.addEventListener('hashchange',()=>{route();window.scrollTo(0,0)});
 route();
 renderToday();
-load('routine');
+render();
 })();
 </script>
 </body>
