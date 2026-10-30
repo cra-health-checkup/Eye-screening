@@ -5,13 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>คัดกรองตา Check-up</title>
 <style>
+/* Chulabhorn Likit: hospital corporate font, served from fonts/ */
+@font-face{font-family:"Chulabhorn Likit Text";src:url("fonts/chulabhornlikittext-light.woff2") format("woff2"),url("fonts/chulabhornlikittext-light.woff") format("woff");font-weight:300;font-style:normal;font-display:swap}
+@font-face{font-family:"Chulabhorn Likit Text";src:url("fonts/chulabhornlikittext-regular.woff2") format("woff2"),url("fonts/chulabhornlikittext-regular.woff") format("woff");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Chulabhorn Likit Text";src:url("fonts/chulabhornlikittext-medium.woff2") format("woff2"),url("fonts/chulabhornlikittext-medium.woff") format("woff");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Chulabhorn Likit Text";src:url("fonts/chulabhornlikittext-bold.woff2") format("woff2"),url("fonts/chulabhornlikittext-bold.woff") format("woff");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"Chulabhorn Likit Display";src:url("fonts/chulabhornlikitdisplay-medium.woff2") format("woff2"),url("fonts/chulabhornlikitdisplay-medium.woff") format("woff");font-weight:500;font-style:normal;font-display:swap}
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap">
 <style>
 /* Layout: clinic tool — sticky tab bar; entry view = form left, live triage panel right; reference views below as readable tables */
 :root{
@@ -172,6 +178,55 @@ tr:last-child td{border-bottom:0}
 .consult div{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px}
 .consult b{display:block;font-family:var(--f-display);font-size:14px;margin-bottom:2px}
 @media (prefers-reduced-motion:no-preference){.verdict{transition:background .2s}}
+
+/* print form: a sheet of paper, black on white in both themes */
+.pm{position:fixed;inset:0;z-index:50;background:color-mix(in srgb,var(--ink) 55%,transparent);display:flex;flex-direction:column}
+.pm-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border-bottom:1px solid var(--line);padding-block:calc(10px + env(safe-area-inset-top,0px)) 10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font-weight:600}
+.pm-scroll{flex:1;overflow:auto;padding:24px 16px}
+.sheet{--p-ink:#000;--p-mute:#555;--p-line:#000;--p-shade:#F2F2F2;--p-red:#C00000;--p-sys:#1F4E9A;
+  width:210mm;min-height:297mm;margin:0 auto;background:#fff;color:var(--p-ink);padding:7mm 14mm 6mm;box-shadow:0 4px 24px rgba(0,0,0,.25);
+  font-family:"Chulabhorn Likit Text","Sarabun","IBM Plex Sans Thai",sans-serif;font-size:10pt;line-height:1.4}
+.sheet h1{font-family:"Chulabhorn Likit Display","Chulabhorn Likit Text","Sarabun",sans-serif;font-size:17pt;font-weight:500;margin:0 0 2pt}
+.sheet h2{font-family:"Chulabhorn Likit Display","Chulabhorn Likit Text","Sarabun",sans-serif;font-size:13.5pt;font-weight:500;margin:6pt 0 3pt}
+.sheet .lead{margin:0 0 6pt}
+.sheet table{width:100%;border-collapse:separate;border-spacing:0;font-size:10pt;table-layout:fixed;border-top:1px solid var(--p-line);border-left:1px solid var(--p-line)}
+.sheet td,.sheet th{border-width:0 1px 1px 0!important;border-style:solid!important;border-color:var(--p-line)!important}
+.sheet td,.sheet th{border:1px solid var(--p-line);padding:2.5pt 6pt;vertical-align:top;text-align:left;background:none;color:var(--p-ink);font-weight:400;white-space:normal}
+.sheet th{font-weight:400}
+.sheet .stk{width:35%;text-align:left}
+.sheet .stk div{margin-bottom:2pt}
+.sheet .sticker{vertical-align:top;padding:0!important}
+.sheet .stz{height:1.6in;margin:4pt;border:1px dashed #9A9A9A;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#8A8A8A;padding:4pt}
+.sheet .nsg{border-top:1px solid var(--p-line);padding:3pt 8pt 4pt;font-size:9.5pt}
+.sheet .nsg .ln{border-bottom:1px solid var(--p-ink);height:16pt}
+.sheet .nsg .pn{display:flex;align-items:flex-end;gap:2pt;margin-top:2pt}
+.sheet .nsg .pn span{flex:1;border-bottom:1px dotted var(--p-ink);height:12pt}
+.sheet .stk .k{color:var(--p-mute)}
+.sheet .gr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1pt 8pt}
+.sheet .gr .opt{white-space:normal;margin-right:0}
+.sheet .red{color:var(--p-red);margin:2pt 0 6pt}
+.sheet .cb{display:inline-block;width:9pt;height:9pt;border:1px solid var(--p-ink);margin-right:4pt;vertical-align:-1pt;position:relative}
+.sheet .cb.on::after{content:"";position:absolute;left:2.4pt;top:0;width:2.6pt;height:5.6pt;border:solid var(--p-ink);border-width:0 1.6px 1.6px 0;transform:rotate(45deg)}
+.sheet .opt{white-space:nowrap;margin-right:12pt}
+.sheet .v{border-bottom:1px solid var(--p-ink);padding:0 3pt;min-width:32pt;display:inline-block;text-align:center;font-weight:600}
+.sheet .v.w{min-width:90pt;text-align:left}
+.sheet .stk .v.w{min-width:0;display:inline}
+.sheet .sys{color:var(--p-sys);font-size:9pt;margin-top:2pt}
+.sheet .lbl{background:var(--p-shade);width:32%}
+.sheet .sign{margin-top:10pt;display:flex;gap:14pt;flex-wrap:wrap}
+.sheet .foot{margin-top:6pt;font-size:8.5pt;color:var(--p-mute)}
+.sheet .blank{height:34pt}
+@media print{
+  @page{size:A4;margin:0}
+  body{background:#fff!important}
+  body::before{display:none!important}
+  body>*:not(#printModal){display:none!important}
+  :root{padding:0!important}
+  .pm{position:static!important;background:none!important;display:block!important}
+  .pm-bar{display:none!important}
+  .pm-scroll{overflow:visible!important;padding:0!important}
+  .sheet{box-shadow:none!important;margin:0!important;min-height:0!important;width:auto!important}
+}
 </style>
 </head>
 <body>
@@ -273,10 +328,11 @@ tr:last-child td{border-bottom:0}
               <option value="14">14 แผ่น (นับแผ่น 1–11)</option>
             </select>
           </label>
-          <label class="f"><span>อ่านถูก (แผ่น) <span class="num" id="col_max">/21</span></span><input type="number" id="col_n" min="0" max="21"></label>
+          <label class="f"><span>ตาขวา (OD) อ่านถูก <span class="num col_max">/21</span></span><input type="number" id="col_n_od" min="0" max="21"></label>
+          <label class="f"><span>ตาซ้าย (OS) อ่านถูก <span class="num col_max">/21</span></span><input type="number" id="col_n_os" min="0" max="21"></label>
         </div>
         <div class="checks" style="margin-top:10px">
-          <label class="chk"><input type="checkbox" id="col_new">เคยตรวจปกติมาก่อน หรือผลสองตาต่างกัน</label>
+          <label class="chk"><input type="checkbox" id="col_new">เคยตรวจปกติมาก่อน</label>
         </div>
       </fieldset>
 
@@ -327,6 +383,7 @@ tr:last-child td{border-bottom:0}
       </div>
       <div class="row">
         <button type="button" class="btn primary" id="addToday">เพิ่มเข้ารายการวันนี้</button>
+        <button type="button" class="btn" id="openPrint">พิมพ์แบบสรุปผลให้จักษุแพทย์</button>
         <span class="toast" id="toast" role="status"></span>
       </div>
     </aside>
@@ -522,6 +579,17 @@ tr:last-child td{border-bottom:0}
 </section>
 </main>
 
+<div class="pm" id="printModal" hidden role="dialog" aria-modal="true" aria-label="แบบสรุปผลตรวจตาโดยจักษุแพทย์">
+  <div class="pm-bar">
+    <span>ตัวอย่างก่อนพิมพ์ · A4</span>
+    <div class="row">
+      <button type="button" class="btn primary" id="doPrint">พิมพ์</button>
+      <button type="button" class="btn" id="closePrint">ปิด</button>
+    </div>
+  </div>
+  <div class="pm-scroll"><div class="sheet" id="printForm"></div></div>
+</div>
+
 <script>
 (function(){
 const $=id=>document.getElementById(id);
@@ -559,7 +627,7 @@ function read(){
     job:$('job').value,examiner:$('examiner').value.trim(),
     rf:Object.keys(RF).filter(ck),glasses:ck('h_glasses'),dm:ck('h_dm'),fhg:ck('h_fhg'),follow:ck('h_follow'),
     va:{od:idx('va_od'),os:idx('va_os')},ph:{od:idx('ph_od'),os:idx('ph_os')},
-    col:{ed:$('col_ed').value,n:num('col_n'),isNew:ck('col_new')},
+    col:{ed:$('col_ed').value,od:num('col_n_od'),os:num('col_n_os'),isNew:ck('col_new')},
     iop:{od:num('iop_od'),os:num('iop_os')},
     ar:{od:{sph:num('sph_od'),cyl:num('cyl_od'),ax:num('ax_od'),err:ck('err_od')},os:{sph:num('sph_os'),cyl:num('cyl_os'),ax:num('ax_os'),err:ck('err_os')}}
   };
@@ -641,14 +709,17 @@ function interpret(d){
   /* Colour */
   let colStatus=null;
   const ed=ED[d.col.ed];
-  if(d.col.n!=null){
-    const n=Math.min(d.col.n,ed.max), lab=`<b>Ishihara ${n}/${ed.max}</b>`;
-    if(n>=ed.ok){colStatus='ok';add('ตาบอดสี',0,`${lab} การเห็นสีปกติ`)}
-    else if(n<=ed.def){
-      colStatus='def';
-      if(d.col.isNew) add('ตาบอดสี',2,`${lab} พร่องการเห็นสี สงสัยเกิดภายหลัง`,'ตรวจหาโรคจอตา/ประสาทตา','L2a');
-      else add('ตาบอดสี',1,`${lab} พร่องการเห็นสี (น่าจะแต่กำเนิด)`,'แจ้งผลและให้คำแนะนำ ไม่ต้องรักษา');
-    } else {colStatus='border';add('ตาบอดสี',1,`${lab} ก้ำกึ่ง`,'ทวนซ้ำใต้แสงมาตรฐาน')}
+  const cls=n=>n>=ed.ok?'ok':n<=ed.def?'def':'border';
+  const cv=['od','os'].filter(e=>d.col[e]!=null).map(e=>({e,n:Math.min(d.col[e],ed.max)}));
+  if(cv.length){
+    const lab=cv.length===2?(cv[0].n===cv[1].n?`<b>Ishihara ${cv[0].n}/${ed.max}</b> ทั้งสองตา`:`<b>Ishihara OD ${cv[0].n}/${ed.max} · OS ${cv[1].n}/${ed.max}</b>`):`<b>Ishihara ${EYE[cv[0].e]} ${cv[0].n}/${ed.max}</b>`;
+    colStatus=cls(Math.min(...cv.map(c=>c.n)));
+    const asym=cv.length===2&&cls(cv[0].n)!==cls(cv[1].n)&&(cls(cv[0].n)==='def'||cls(cv[1].n)==='def');
+    if(colStatus==='ok') add('ตาบอดสี',0,`${lab} การเห็นสีปกติ`);
+    else if(asym) add('ตาบอดสี',2,`${lab} สองตาต่างกัน สงสัยเกิดภายหลัง`,'ตรวจหาโรคจอตา/ประสาทตา','L2a');
+    else if(colStatus==='def'&&d.col.isNew) add('ตาบอดสี',2,`${lab} พร่องการเห็นสี สงสัยเกิดภายหลัง`,'ตรวจหาโรคจอตา/ประสาทตา','L2a');
+    else if(colStatus==='def') add('ตาบอดสี',1,`${lab} พร่องการเห็นสี (น่าจะแต่กำเนิด)`,'แจ้งผลและให้คำแนะนำ ไม่ต้องรักษา');
+    else add('ตาบอดสี',1,`${lab} ก้ำกึ่ง`,'ทวนซ้ำใต้แสงมาตรฐาน');
   } else missing.push('ตาบอดสี');
 
   /* History advice */
@@ -715,7 +786,7 @@ function consultMsg(d,r){
   L.push(`VA:            ${vaS('od')} | ${vaS('os')}`);
   L.push(`IOP (NCT):     ${d.iop.od??'—'} | ${d.iop.os??'—'} mmHg`);
   L.push(`Auto ref:      ${arS('od')} | ${arS('os')}`);
-  L.push(`Ishihara:      ${d.col.n!=null?`${d.col.n}/${ED[d.col.ed].max} (ชุด ${d.col.ed} แผ่น)`:'—'}`);
+  L.push(`Ishihara:      ${d.col.od??'—'} | ${d.col.os??'—'} /${ED[d.col.ed].max} (ชุด ${d.col.ed} แผ่น)`);
   L.push('');
   L.push('ประเด็นที่ขอปรึกษา');
   r.F.filter(f=>f.level>=2).sort((a,b)=>b.level-a.level).forEach(f=>L.push(`• [${LV[f.level].name}] ${strip(f.text)}${f.advice?' — '+f.advice:''}`));
@@ -751,10 +822,10 @@ function render(){
 
 /* ---------- examples ---------- */
 const EX={
-  normal:{hn:'EX-0001',pname:'ตัวอย่าง ปกติ',age:32,sex:'หญิง',org:'บริษัทตัวอย่าง จำกัด',job:'general',examiner:'พยาบาลตัวอย่าง',va_od:1,va_os:2,col_ed:'38',col_n:21,iop_od:15,iop_os:16,sph_od:-0.5,cyl_od:-0.25,ax_od:180,sph_os:-0.75,cyl_os:-0.5,ax_os:170},
-  advice:{hn:'EX-0002',pname:'ตัวอย่าง แนะนำ',age:45,sex:'ชาย',org:'บริษัทตัวอย่าง จำกัด',job:'general',examiner:'พยาบาลตัวอย่าง',h_dm:true,va_od:5,ph_od:2,va_os:4,ph_os:2,col_ed:'38',col_n:21,iop_od:23,iop_os:19,sph_od:-2.75,cyl_od:-0.75,ax_od:180,sph_os:-2.25,cyl_os:-0.5,ax_os:10},
-  routine:{hn:'EX-0003',pname:'ตัวอย่าง นัดหมาย',age:52,sex:'ชาย',org:'บริษัทขนส่งตัวอย่าง',job:'driver',examiner:'พยาบาลตัวอย่าง',h_fhg:true,h_glasses:true,va_od:3,va_os:5,ph_os:4,col_ed:'38',col_n:20,iop_od:26,iop_os:19,sph_od:1.25,cyl_od:-0.5,ax_od:90,sph_os:1.5,cyl_os:-0.75,ax_os:85},
-  urgent:{hn:'EX-0004',pname:'ตัวอย่าง เร่งด่วน',age:61,sex:'หญิง',org:'บริษัทตัวอย่าง จำกัด',job:'color',examiner:'พยาบาลตัวอย่าง',va_od:8,ph_od:8,va_os:3,col_ed:'24',col_n:9,iop_od:32,iop_os:18,err_od:true,sph_os:0.75,cyl_os:-0.5,ax_os:95},
+  normal:{hn:'EX-0001',pname:'ตัวอย่าง ปกติ',age:32,sex:'หญิง',org:'บริษัทตัวอย่าง จำกัด',job:'general',examiner:'พยาบาลตัวอย่าง',va_od:1,va_os:2,col_ed:'38',col_n_od:21,col_n_os:21,iop_od:15,iop_os:16,sph_od:-0.5,cyl_od:-0.25,ax_od:180,sph_os:-0.75,cyl_os:-0.5,ax_os:170},
+  advice:{hn:'EX-0002',pname:'ตัวอย่าง แนะนำ',age:45,sex:'ชาย',org:'บริษัทตัวอย่าง จำกัด',job:'general',examiner:'พยาบาลตัวอย่าง',h_dm:true,va_od:5,ph_od:2,va_os:4,ph_os:2,col_ed:'38',col_n_od:21,col_n_os:21,iop_od:23,iop_os:19,sph_od:-2.75,cyl_od:-0.75,ax_od:180,sph_os:-2.25,cyl_os:-0.5,ax_os:10},
+  routine:{hn:'EX-0003',pname:'ตัวอย่าง นัดหมาย',age:52,sex:'ชาย',org:'บริษัทขนส่งตัวอย่าง',job:'driver',examiner:'พยาบาลตัวอย่าง',h_fhg:true,h_glasses:true,va_od:3,va_os:5,ph_os:4,col_ed:'38',col_n_od:20,col_n_os:20,iop_od:26,iop_os:19,sph_od:1.25,cyl_od:-0.5,ax_od:90,sph_os:1.5,cyl_os:-0.75,ax_os:85},
+  urgent:{hn:'EX-0004',pname:'ตัวอย่าง เร่งด่วน',age:61,sex:'หญิง',org:'บริษัทตัวอย่าง จำกัด',job:'color',examiner:'พยาบาลตัวอย่าง',va_od:8,ph_od:8,va_os:3,col_ed:'24',col_n_od:9,col_n_os:9,iop_od:32,iop_os:18,err_od:true,sph_os:0.75,cyl_os:-0.5,ax_os:95},
   emergency:{hn:'EX-0005',pname:'ตัวอย่าง ฉุกเฉิน',age:58,sex:'หญิง',org:'บริษัทตัวอย่าง จำกัด',job:'general',examiner:'พยาบาลตัวอย่าง',rf_halo:true,rf_pain:true,va_od:7,ph_od:6,va_os:1,iop_od:48,iop_os:17,sph_od:2.75,cyl_od:-0.5,ax_od:90,sph_os:2.5,cyl_os:-0.25,ax_os:80}
 };
 function clearForm(){
@@ -770,7 +841,7 @@ function load(key){
   document.querySelectorAll('[data-ex]').forEach(b=>b.classList.toggle('on',b.dataset.ex===key));
   $('exTag').hidden=false; render();
 }
-function updColMax(){const m=ED[$('col_ed').value].max;$('col_max').textContent='/'+m;$('col_n').max=m}
+function updColMax(){const m=ED[$('col_ed').value].max;document.querySelectorAll('.col_max').forEach(e=>e.textContent='/'+m);$('col_n_od').max=m;$('col_n_os').max=m}
 document.querySelectorAll('[data-ex]').forEach(b=>b.addEventListener('click',()=>load(b.dataset.ex)));
 $('reset').addEventListener('click',()=>{clearForm();document.querySelectorAll('[data-ex]').forEach(b=>b.classList.remove('on'));$('exTag').hidden=true;render()});
 $('col_ed').addEventListener('change',updColMax);
@@ -784,6 +855,90 @@ function copyText(text,el){
   try{navigator.clipboard.writeText(text).then(()=>toast('คัดลอกแล้ว'),fallback)}catch(e){fallback()}
 }
 document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{const el=$(b.dataset.copy);copyText(el.textContent,el)}));
+
+/* ---------- print form ---------- */
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cb=(on,label,cls)=>`<span class="opt${cls?' '+cls:''}"><span class="cb${on?' on':''}"></span>${label}</span>`;
+const val=(t,w)=>`<span class="v${w?' w':''}">${t==null||t===''?'&nbsp;':esc(t)}</span>`;
+function lvLabel(lvl,time){if(lvl<0)return '—';if(lvl===2)return time==='L2a'?'นัด 2–4 สัปดาห์':'นัด 1–3 เดือน';return LV[lvl].name}
+function testLevel(r,test){const f=r.F.filter(x=>x.test===test);if(!f.length)return null;const m=Math.max(...f.map(x=>x.level));const t=f.filter(x=>x.level===m&&x.time).map(x=>x.time).sort()[0];return lvLabel(m,t)}
+function recs(r){
+  const has=fn=>r.F.some(f=>f.level>0&&fn(f));
+  return {
+    glasses:has(f=>/แว่น/.test(f.advice)),
+    retina:has(f=>/จอตา/.test(f.advice)),
+    glaucoma:has(f=>/ต้อหิน/.test(f.advice)||(f.test==='ความดันลูกตา'&&f.level>=2)),
+    iop:has(f=>f.test==='ความดันลูกตา'&&/วัดซ้ำ/.test(f.advice)),
+    color:has(f=>f.test==='ตาบอดสี'&&/ทวนซ้ำ/.test(f.advice))
+  };
+}
+function buildPrint(d,r){
+  const PRF={rf_sudden:'ตามัวเฉียบพลัน',rf_diplopia:'ภาพซ้อนเกิดใหม่',rf_pain:'ปวดตามาก / ตาแดงร่วมตามัว',rf_trauma:'อุบัติเหตุ / สารเคมีเข้าตา',rf_flash:'แสงวาบ จุดลอยใหม่ ม่านบัง',rf_halo:'เห็นรุ้ง ปวดศีรษะ คลื่นไส้'};
+  const rf=k=>cb(d.rf.includes(k),PRF[k]);
+  const vaT=i=>i==null?null:VA[i][0];
+  const ar=e=>d.ar[e];
+  const seT=e=>{const a=ar(e);return a.err||a.sph==null?null:fmtD(se(a))};
+  const arCell=e=>{const a=ar(e);if(a.err)return val('วัดไม่ได้ (ERR)');return `S ${val(a.sph==null?null:fmtD(a.sph))} C ${val(a.sph==null&&a.cyl==null?null:fmtD(a.cyl||0))}<br>A ${val(a.ax)} SE ${val(seT(e))}`};
+  const dx=test=>{const s=testLevel(r,test);return `${cb(false,'ปกติ')}${cb(false,'ผิดปกติ')}<br>${cb(false,'อื่น ๆ')}${val(null)}${s?`<div class="sys">ระบบเสนอ: ${s}</div>`:''}`};
+  const rc=recs(r);
+  const tl=r.lvl<0?null:(r.lvl===2?lvLabel(2,r.F.filter(f=>f.level===2&&f.time).map(f=>f.time).sort()[0]):LV[r.lvl].name+(r.time?` (${r.time})`:''));
+  const recSys=[rc.glasses&&'วัดแว่น',rc.retina&&'ตรวจจอตาขยายม่านตา',rc.glaucoma&&'ตรวจต้อหิน',rc.iop&&'วัดความดันลูกตาซ้ำ',rc.color&&'ทวนตาบอดสีซ้ำ'].filter(Boolean);
+  const occD=r.occ.find(o=>/ขับขี่/.test(o.t)), occC=r.occ.find(o=>/แยกสี/.test(o.t));
+  const ishi=e=>d.col[e]==null?`ถูก ${val(null)} แผ่น`:`ถูก ${val(d.col[e])} แผ่น`;
+  return `
+<h1>แบบสรุปผลตรวจตาโดยจักษุแพทย์</h1>
+<p class="lead">จักษุแพทย์กรอกหลังทบทวนผลตรวจ สรุประดับของแต่ละรายการ แล้วสรุประดับรวมและการนัด</p>
+<table><tr>
+<td class="stk sticker">
+  <div class="stz"><span>แปะสติ๊กเกอร์ผู้รับบริการ</span><span>(ชื่อ–สกุล / HN / อายุ / วันที่ตรวจ)</span></div>
+  <div class="nsg"><div>ลงชื่อพยาบาลผู้ตรวจ</div><div class="ln"></div><div class="pn">(<span></span>)</div></div>
+</td>
+<td>
+  <div class="gr"><b>อาการเตือน (ต้องถามทุกราย)</b><span>${cb(!d.rf.length,'<b>ไม่มีอาการ</b>')}</span>
+  ${rf('rf_sudden')}${rf('rf_diplopia')}${rf('rf_pain')}${rf('rf_trauma')}${rf('rf_flash')}${rf('rf_halo')}</div>
+  <div class="red">มีข้อใดข้อหนึ่ง → ฉุกเฉิน หยุดคัดกรองและส่งทันที</div>
+  <b>อาชีพ / งาน</b>
+  <div class="gr">${cb(d.job==='driver','ขับขี่ / ควบคุมเครื่องจักร')}${cb(d.job==='color','งานที่ต้องแยกสี')}</div>
+  <div>${cb(d.job==='general','อื่น ๆ')}${val(d.job==='general'?'ทั่วไป / สำนักงาน':null,true)}</div>
+</td></tr></table>
+
+<table style="margin-top:8pt">
+<tr><th style="width:24%">รายการ</th><th style="width:21%">OD (ตาขวา)</th><th style="width:21%">OS (ตาซ้าย)</th><th>การวินิจฉัยของจักษุแพทย์</th></tr>
+<tr><td>Visual acuity (VA / pinhole)${d.glasses?' <span class="sys" style="color:var(--p-mute)">(ใส่แว่น/คอนแทคเลนส์)</span>':''}</td>
+  <td>VA ${val(vaT(d.va.od))}<br>PH ${val(vaT(d.ph.od))}</td><td>VA ${val(vaT(d.va.os))}<br>PH ${val(vaT(d.ph.os))}</td><td>${dx('VA')}</td></tr>
+<tr><td>ความดันลูกตา NCT เฉลี่ย (mmHg)</td><td>${val(d.iop.od)} mmHg</td><td>${val(d.iop.os)} mmHg</td><td>${dx('ความดันลูกตา')}</td></tr>
+<tr><td>ตาบอดสี Ishihara (ชุด ${val(d.col.ed)} แผ่น)${d.col.isNew?'<div class="sys" style="color:var(--p-mute)">เคยตรวจปกติมาก่อน</div>':''}</td><td>${ishi('od')}</td><td>${ishi('os')}</td><td>${dx('ตาบอดสี')}</td></tr>
+<tr><td>Auto refraction</td><td>${arCell('od')}</td><td>${arCell('os')}</td><td>${dx('Auto refraction')}</td></tr>
+</table>
+
+<h2>สรุปผลรวม</h2>
+<table>
+<tr><td class="lbl">ระดับรวม<br>(สูงสุดของทุกรายการ)</td><td>
+  ${cb(false,'ปกติ')}${cb(false,'แนะนำ / ติดตาม')}<br>${cb(false,'นัด 1–3 เดือน')}${cb(false,'นัด 2–4 สัปดาห์')}<br>${cb(false,'เร่งด่วน (ภายใน 1 สัปดาห์)')}${cb(false,'ฉุกเฉิน (วันนี้)')}
+  ${tl?`<div class="sys">ระบบเสนอ: ${tl}</div>`:''}</td></tr>
+<tr><td class="lbl">คำแนะนำ</td><td>
+  ${cb(false,'วัดแว่น')}${cb(false,'ตรวจจอตาขยายม่านตา')}${cb(false,'ตรวจต้อหิน')}<br>${cb(false,'วัดความดันลูกตาซ้ำ')}${cb(false,'ทวนตาบอดสีซ้ำ')}<br>${cb(false,'อื่น ๆ')}${val(null,true)}
+  ${recSys.length?`<div class="sys">ระบบเสนอ: ${recSys.join(', ')}</div>`:''}</td></tr>
+<tr><td class="lbl">งานขับขี่ / ควบคุมเครื่องจักร</td><td>${cb(false,'ผ่าน')}${cb(false,'ไม่ผ่าน')}${cb(false,'ไม่เกี่ยวข้อง')}
+  <div class="sys">ระบบเสนอ: ${d.job!=='driver'?'ไม่เกี่ยวข้อง':occD&&occD.ok===true?'ผ่าน':occD&&occD.ok===false?'ไม่ผ่าน':'รอผล VA'}</div></td></tr>
+<tr><td class="lbl">งานที่ต้องแยกสี</td><td>${cb(false,'ส่ง Farnsworth D-15')}${cb(false,'ไม่เกี่ยวข้อง')}
+  <div class="sys">ระบบเสนอ: ${d.job!=='color'?'ไม่เกี่ยวข้อง':occC&&occC.ok===false?'ส่ง Farnsworth D-15':occC&&occC.ok===true?'ผ่าน ไม่ต้องส่ง':'รอผล / ทวนซ้ำ'}</div></td></tr>
+<tr><td class="lbl">การวินิจฉัย / ความเห็นเพิ่มเติม</td><td class="blank"></td></tr>
+</table>
+
+<div class="sign"><span>ลงชื่อจักษุแพทย์ ${val(null,true)}</span><span>เลขที่ใบอนุญาต ${val(null)}</span><span>วันที่ ${val(null)}</span></div>
+<p class="foot">ค่าตรวจกรอกจากระบบคัดกรองตา Check-up · ข้อความสีน้ำเงิน "ระบบเสนอ" เป็นผลแปลอัตโนมัติเพื่อประกอบการพิจารณา จักษุแพทย์เป็นผู้ยืนยัน</p>`;
+}
+let lastFocus=null;
+$('openPrint').addEventListener('click',()=>{
+  if(!current||current.r.lvl<0){toast('ยังไม่มีผลตรวจให้พิมพ์');return}
+  $('printForm').innerHTML=buildPrint(current.d,current.r);
+  lastFocus=document.activeElement;$('printModal').hidden=false;$('doPrint').focus();
+});
+const closePM=()=>{$('printModal').hidden=true;lastFocus&&lastFocus.focus()};
+$('closePrint').addEventListener('click',closePM);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('printModal').hidden)closePM()});
+$('doPrint').addEventListener('click',()=>{try{window.print()}catch(e){}});
 
 /* ---------- today list (in-memory) ---------- */
 const rows=[];
