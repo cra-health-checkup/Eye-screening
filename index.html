@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>คัดกรองตา Check-up</title>
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: clinic tool — sticky tab bar; entry view = form left, live triage panel right; reference views below as readable tables */
+:root{
+  --bg:#F3F6F7; --surface:#FFFFFF; --sunk:#E9EEF0; --ink:#13222B; --muted:#56666F; --line:#D5DEE2;
+  --accent:#0E5A6E; --accent-ink:#FFFFFF; --accent-soft:#DCEDF1;
+  --l0:#23744A; --l0s:#E1F2E8; --l1:#2B63A8; --l1s:#E2ECF8; --l2:#9A6512; --l2s:#FBF0DA;
+  --l3:#B8471A; --l3s:#FBE6DC; --l4:#B0211B; --l4s:#FADDDB;
+  --f-display:"Anuphan","IBM Plex Sans Thai",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F171B; --surface:#172329; --sunk:#1E2D34; --ink:#E4ECEF; --muted:#9AAAB2; --line:#2B3C44;
+  --accent:#5CB3C9; --accent-ink:#06222A; --accent-soft:#163841;
+  --l0:#5CC78C; --l0s:#163226; --l1:#7CA9E6; --l1s:#182A40; --l2:#E2AE52; --l2s:#382B12;
+  --l3:#F08A5D; --l3s:#3D2216; --l4:#F27069; --l4s:#421B19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F171B; --surface:#172329; --sunk:#1E2D34; --ink:#E4ECEF; --muted:#9AAAB2; --line:#2B3C44;
+  --accent:#5CB3C9; --accent-ink:#06222A; --accent-soft:#163841;
+  --l0:#5CC78C; --l0s:#163226; --l1:#7CA9E6; --l1s:#182A40; --l2:#E2AE52; --l2s:#382B12;
+  --l3:#F08A5D; --l3s:#3D2216; --l4:#F27069; --l4s:#421B19; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.3;margin:0}
+.num,.mono{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.optotype{width:34px;height:34px;border:2px solid var(--ink);border-radius:6px;display:grid;place-items:center;font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:22px;line-height:1;flex:none}
+.brand h1{font-size:18px}
+.brand p{margin:0;font-size:12.5px;color:var(--muted)}
+nav.tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav.tabs a{padding:7px 14px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:500;font-size:14.5px}
+nav.tabs a:hover{background:var(--sunk);color:var(--ink)}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+
+main{padding-block:22px 60px}
+.view-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.view-head h2{font-size:24px}
+.view-head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+
+/* entry layout */
+.entry{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:920px){.entry{grid-template-columns:minmax(0,1fr)}}
+.form{display:flex;flex-direction:column;gap:14px;min-width:0}
+fieldset{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin:0;padding:14px 16px 16px;min-width:0}
+legend{font-family:var(--f-display);font-weight:600;font-size:16px;padding:0 6px;margin-left:-6px}
+legend .unit{font-family:var(--f-data);font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.hint{font-size:12.5px;color:var(--muted);margin:2px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 12px}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted);min-width:0}
+input[type=text],input[type=number],select{width:100%;min-width:0;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-size:15px}
+input[type=number]{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+input:focus,select:focus{border-color:var(--accent)}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px 14px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+.chk input{margin-top:5px;accent-color:var(--accent);flex:none}
+.redflags{border-color:color-mix(in srgb,var(--l4) 40%,var(--line))}
+.redflags .chk input{accent-color:var(--l4)}
+.sub{font-size:13px;font-weight:600;color:var(--ink);margin:12px 0 6px;font-family:var(--f-display)}
+
+.eyegrid{display:grid;grid-template-columns:minmax(80px,.8fr) minmax(0,1fr) minmax(0,1fr);gap:8px 10px;align-items:center}
+.eyegrid .h{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em}
+.eyegrid .rl{font-size:13.5px;color:var(--ink)}
+.eyegrid .rl small{display:block;color:var(--muted);font-size:11.5px}
+.ar{display:grid;grid-template-columns:minmax(52px,.5fr) repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:center}
+.ar .h{font-size:12px;font-weight:600;color:var(--muted)}
+.ar .err{font-size:12.5px;white-space:nowrap}
+
+.examples{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.examples button{border:1px solid var(--line);background:var(--surface);padding:4px 10px;border-radius:999px;cursor:pointer;font-size:13px}
+.examples button:hover{border-color:var(--accent);color:var(--accent)}
+.examples button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+
+/* result panel */
+.result{position:sticky;top:calc(env(safe-area-inset-top,0px) + 74px);display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:920px){.result{position:static}}
+.verdict{border-radius:var(--r);padding:16px 18px;background:var(--lvs);border:1px solid color-mix(in srgb,var(--lv) 45%,transparent);color:var(--ink)}
+.verdict .lvl{display:flex;align-items:center;gap:10px}
+.verdict .dot{width:14px;height:14px;border-radius:50%;background:var(--lv);flex:none}
+.verdict h3{font-size:22px;color:var(--lv)}
+.verdict .time{font-family:var(--f-display);font-weight:600;font-size:16px;margin-top:4px}
+.verdict .act{margin:6px 0 0;font-size:14px}
+.verdict .warn{margin-top:8px;font-size:13px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-width:0}
+.card h4{margin:0 0 8px;font-family:var(--f-display);font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.findings{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.findings li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:9px 0;border-top:1px solid var(--line)}
+.findings li:first-child{border-top:0;padding-top:2px}
+.findings .t{font-size:14px}
+.findings .t b{font-weight:600}
+.findings .a{grid-column:2;font-size:13px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--lvs);color:var(--lv);white-space:nowrap;height:fit-content;border:1px solid color-mix(in srgb,var(--lv) 35%,transparent)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--lv)}
+.L0{--lv:var(--l0);--lvs:var(--l0s)} .L1{--lv:var(--l1);--lvs:var(--l1s)} .L2{--lv:var(--l2);--lvs:var(--l2s)}
+.L3{--lv:var(--l3);--lvs:var(--l3s)} .L4{--lv:var(--l4);--lvs:var(--l4s)}
+.LX{--lv:var(--muted);--lvs:var(--sunk)}
+.occ{font-size:14px}
+.occ.fail{color:var(--l3)}
+pre.msg{white-space:pre-wrap;word-break:break-word;margin:0;font-family:var(--f-body);font-size:13.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;max-height:280px;overflow:auto}
+.btn{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{padding:3px 9px;font-size:12.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toast{font-size:12.5px;color:var(--l0)}
+.badge-ex{font-size:11.5px;padding:2px 8px;border-radius:6px;background:var(--sunk);color:var(--muted)}
+
+/* today list */
+.today{margin-top:24px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--muted);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.empty{padding:18px;color:var(--muted);font-size:14px}
+.counts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* criteria */
+.crit{display:grid;gap:18px}
+.crit section{min-width:0}
+.crit h3{font-size:18px;margin-bottom:4px}
+.crit .lead{margin:0 0 10px;color:var(--muted);font-size:14px;max-width:80ch}
+.crit td:first-child{white-space:nowrap}
+.crit td.n{font-family:var(--f-data);font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{font-size:13.5px;color:var(--muted);margin:8px 0 0;max-width:85ch}
+.disclaimer{border:1px dashed var(--line);border-radius:var(--r);padding:12px 14px;font-size:13.5px;color:var(--muted);background:var(--surface)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:18px}
+
+/* flow */
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;counter-reset:s}
+.steps li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;position:relative;padding-bottom:16px}
+.steps li::before{counter-increment:s;content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);color:var(--accent);display:grid;place-items:center;font-family:var(--f-data);font-weight:600;z-index:1}
+.steps li::after{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--line)}
+.steps li:last-child::after{display:none}
+.steps h4{margin:4px 0 2px;font-family:var(--f-display);font-size:16px}
+.steps p{margin:0;font-size:14px;color:var(--muted);max-width:75ch}
+.steps .gate{margin-top:6px;font-size:13.5px;padding:7px 10px;border-radius:8px;background:var(--l4s);color:var(--ink);border-left:3px solid var(--l4)}
+.lanes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:6px}
+@media (max-width:1000px){.lanes{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
+.lane{border-radius:var(--r);background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--lv);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.lane h4{margin:0;font-family:var(--f-display);font-size:15.5px;color:var(--lv)}
+.lane .tf{font-family:var(--f-display);font-weight:600;font-size:13.5px}
+.lane ul{margin:0;padding-left:18px;font-size:13.5px}
+.lane li{margin:2px 0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.panel h3{font-size:17px;margin-bottom:8px}
+.panel ul{margin:0;padding-left:20px;font-size:14px}
+.panel li{margin:4px 0}
+.consult{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px;margin-top:6px}
+.consult div{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px}
+.consult b{display:block;font-family:var(--f-display);font-size:14px;margin-bottom:2px}
+@media (prefers-reduced-motion:no-preference){.verdict{transition:background .2s}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="optotype" aria-hidden="true">E</div>
+      <div>
+        <h1>คัดกรองตา Check-up</h1>
+        <p>VA · ตาบอดสี · ความดันลูกตา · Auto refraction</p>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="เมนู">
+      <a href="#entry" data-tab="entry">ลงผลและแปลผล</a>
+      <a href="#criteria" data-tab="criteria">เกณฑ์แปลผล</a>
+      <a href="#flow" data-tab="flow">Flow และการส่งปรึกษา</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ================= ENTRY ================= -->
+<section data-view="entry">
+  <div class="view-head">
+    <div>
+      <h2>ลงผลตรวจตา</h2>
+      <p>กรอกผลแล้วระบบแปลผลทันทีทางขวา ระดับสูงสุดที่พบเป็นตัวกำหนดการจัดการ</p>
+    </div>
+    <div class="examples" role="group" aria-label="โหลดเคสตัวอย่าง">
+      <span>เคสตัวอย่าง:</span>
+      <button type="button" data-ex="normal">ปกติ</button>
+      <button type="button" data-ex="advice">แนะนำ</button>
+      <button type="button" data-ex="routine">นัดหมาย</button>
+      <button type="button" data-ex="urgent">เร่งด่วน</button>
+      <button type="button" data-ex="emergency">ฉุกเฉิน</button>
+      <button type="button" id="reset" class="btn small">ล้างฟอร์ม</button>
+    </div>
+  </div>
+
+  <div class="entry">
+    <form class="form" id="form" autocomplete="off">
+      <fieldset>
+        <legend>ผู้รับบริการ</legend>
+        <div class="grid">
+          <label class="f">HN<input type="text" id="hn"></label>
+          <label class="f">ชื่อ-สกุล<input type="text" id="pname"></label>
+          <label class="f">อายุ (ปี)<input type="number" id="age" min="0" max="120"></label>
+          <label class="f">เพศ<select id="sex"><option value="">—</option><option>ชาย</option><option>หญิง</option></select></label>
+          <label class="f">องค์กร / บริษัท<input type="text" id="org"></label>
+          <label class="f">ลักษณะงาน
+            <select id="job">
+              <option value="general">ทั่วไป / สำนักงาน</option>
+              <option value="driver">ขับขี่ยานพาหนะ / ควบคุมเครื่องจักร</option>
+              <option value="color">งานที่ต้องแยกสี (ไฟฟ้า, แล็บ, สี, สัญญาณ)</option>
+            </select>
+          </label>
+          <label class="f">ผู้ตรวจ<input type="text" id="examiner"></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="redflags">
+        <legend>อาการเตือน (ถามก่อนเริ่มตรวจ)</legend>
+        <p class="hint">มีข้อใดข้อหนึ่ง = ฉุกเฉิน ให้หยุดการตรวจคัดกรองและส่งพบจักษุแพทย์ทันที</p>
+        <div class="checks">
+          <label class="chk"><input type="checkbox" id="rf_sudden">ตามัวหรือมองไม่เห็นทันทีทันใด</label>
+          <label class="chk"><input type="checkbox" id="rf_pain">ปวดตามาก หรือตาแดงร่วมกับตามัว</label>
+          <label class="chk"><input type="checkbox" id="rf_flash">เห็นแสงวาบ จุดดำลอยใหม่จำนวนมาก หรือเงาม่านบังภาพ</label>
+          <label class="chk"><input type="checkbox" id="rf_halo">เห็นรุ้งรอบดวงไฟ ร่วมกับปวดศีรษะ คลื่นไส้</label>
+          <label class="chk"><input type="checkbox" id="rf_trauma">อุบัติเหตุที่ตา หรือสารเคมีเข้าตา</label>
+          <label class="chk"><input type="checkbox" id="rf_diplopia">เห็นภาพซ้อนที่เพิ่งเกิด</label>
+        </div>
+        <div class="sub">ประวัติที่มีผลต่อการแปลผล</div>
+        <div class="checks">
+          <label class="chk"><input type="checkbox" id="h_glasses">ตรวจขณะใส่แว่น / คอนแทคเลนส์</label>
+          <label class="chk"><input type="checkbox" id="h_dm">เบาหวาน</label>
+          <label class="chk"><input type="checkbox" id="h_fhg">ญาติสายตรงเป็นต้อหิน</label>
+          <label class="chk"><input type="checkbox" id="h_follow">ติดตามโรคตากับจักษุแพทย์อยู่แล้ว</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Visual acuity <span class="unit">Snellen 20 ft / 6 m</span></legend>
+        <p class="hint">ตรวจทีละตา ทำ pinhole เมื่อ VA แย่กว่า 20/30</p>
+        <div class="eyegrid">
+          <span></span><span class="h">ตาขวา (OD)</span><span class="h">ตาซ้าย (OS)</span>
+          <span class="rl">VA</span><select id="va_od"></select><select id="va_os"></select>
+          <span class="rl">Pinhole<small>ถ้าทำ</small></span><select id="ph_od"></select><select id="ph_os"></select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>ตาบอดสี <span class="unit">Ishihara</span></legend>
+        <div class="grid">
+          <label class="f">ชุดแผ่นทดสอบ
+            <select id="col_ed">
+              <option value="38">38 แผ่น (นับแผ่น 1–21)</option>
+              <option value="24">24 แผ่น (นับแผ่น 1–15)</option>
+              <option value="14">14 แผ่น (นับแผ่น 1–11)</option>
+            </select>
+          </label>
+          <label class="f"><span>อ่านถูก (แผ่น) <span class="num" id="col_max">/21</span></span><input type="number" id="col_n" min="0" max="21"></label>
+        </div>
+        <div class="checks" style="margin-top:10px">
+          <label class="chk"><input type="checkbox" id="col_new">เคยตรวจปกติมาก่อน หรือผลสองตาต่างกัน</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>ความดันลูกตา <span class="unit">NCT, mmHg (เฉลี่ย 3 ค่า)</span></legend>
+        <div class="grid">
+          <label class="f">ตาขวา (OD)<input type="number" id="iop_od" min="0" max="80" step="1"></label>
+          <label class="f">ตาซ้าย (OS)<input type="number" id="iop_os" min="0" max="80" step="1"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Auto refraction <span class="unit">ไดออปเตอร์ (D)</span></legend>
+        <div class="ar">
+          <span></span><span class="h">Sph</span><span class="h">Cyl</span><span class="h">Axis</span><span class="h">ผล</span>
+          <span class="rl">OD</span>
+          <input type="number" id="sph_od" step="0.25" min="-30" max="30" aria-label="OD sphere">
+          <input type="number" id="cyl_od" step="0.25" min="-10" max="10" aria-label="OD cylinder">
+          <input type="number" id="ax_od" step="1" min="0" max="180" aria-label="OD axis">
+          <label class="chk err"><input type="checkbox" id="err_od">วัดไม่ได้</label>
+          <span class="rl">OS</span>
+          <input type="number" id="sph_os" step="0.25" min="-30" max="30" aria-label="OS sphere">
+          <input type="number" id="cyl_os" step="0.25" min="-10" max="10" aria-label="OS cylinder">
+          <input type="number" id="ax_os" step="1" min="0" max="180" aria-label="OS axis">
+          <label class="chk err"><input type="checkbox" id="err_os">วัดไม่ได้</label>
+        </div>
+        <p class="hint" style="margin-top:8px">SE (spherical equivalent) = Sph + Cyl/2 ระบบคำนวณให้</p>
+      </fieldset>
+    </form>
+
+    <aside class="result" aria-live="polite">
+      <div class="verdict LX" id="verdict"></div>
+      <div class="card">
+        <h4>ผลรายการตรวจ <span class="badge-ex" id="exTag" hidden>ข้อมูลตัวอย่าง</span></h4>
+        <ul class="findings" id="findings"></ul>
+      </div>
+      <div class="card" id="occCard" hidden>
+        <h4>ความเหมาะสมกับงาน</h4>
+        <div id="occ"></div>
+      </div>
+      <div class="card">
+        <h4>ข้อความแจ้งผู้รับบริการ <button type="button" class="btn small" data-copy="msgPatient">คัดลอก</button></h4>
+        <pre class="msg" id="msgPatient"></pre>
+      </div>
+      <div class="card" id="consultCard" hidden>
+        <h4>ใบส่งปรึกษาจักษุแพทย์ <button type="button" class="btn small" data-copy="msgConsult">คัดลอก</button></h4>
+        <pre class="msg" id="msgConsult"></pre>
+      </div>
+      <div class="row">
+        <button type="button" class="btn primary" id="addToday">เพิ่มเข้ารายการวันนี้</button>
+        <span class="toast" id="toast" role="status"></span>
+      </div>
+    </aside>
+  </div>
+
+  <div class="today">
+    <div class="view-head">
+      <div>
+        <h2 style="font-size:20px">รายการวันนี้</h2>
+        <p>เก็บไว้ในหน้านี้เท่านั้น ปิดหน้าแล้วข้อมูลหาย คัดลอกเป็นตารางเพื่อวางใน Excel หรือระบบนัดได้</p>
+      </div>
+      <div class="row">
+        <div class="counts" id="counts"></div>
+        <button type="button" class="btn small" id="copyTable">คัดลอกเป็นตาราง</button>
+      </div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>เวลา</th><th>HN</th><th>ชื่อ</th><th>องค์กร</th><th>ระดับ</th><th>ระยะเวลา</th><th>ประเด็นหลัก</th></tr></thead>
+        <tbody id="todayBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CRITERIA ================= -->
+<section data-view="criteria" hidden>
+  <div class="view-head">
+    <div>
+      <h2>เกณฑ์แปลผลคัดกรองตา</h2>
+      <p>ร่างเกณฑ์สำหรับการคัดกรองในศูนย์ตรวจสุขภาพ ใช้ค่าที่ดีที่สุดของแต่ละตา และให้ระดับสูงสุดที่พบเป็นผลรวม</p>
+    </div>
+  </div>
+
+  <div class="crit">
+    <section>
+      <h3>ระดับการจัดการ</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>ระดับ</th><th>ความหมาย</th><th>ระยะเวลาพบจักษุแพทย์</th><th>ผู้ดำเนินการ</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip L0">ปกติ</span></td><td>ผลอยู่ในเกณฑ์ปกติทุกรายการ</td><td>ไม่ต้องพบ ตรวจซ้ำในรอบตรวจสุขภาพถัดไป</td><td>พยาบาลแจ้งผลได้ทันที</td></tr>
+            <tr><td><span class="chip L1">แนะนำ / ติดตาม</span></td><td>พบความผิดปกติเล็กน้อยที่จัดการได้ด้วยคำแนะนำ เช่น ตัดแว่น วัดซ้ำ ตรวจจอตาประจำปี</td><td>ไม่ต้องนัดจากศูนย์ ให้คำแนะนำไปพบเองตามความสะดวก</td><td>พยาบาลแจ้งผลพร้อมคำแนะนำ</td></tr>
+            <tr><td><span class="chip L2">นัดพบจักษุแพทย์</span></td><td>ต้องการการตรวจยืนยันโดยจักษุแพทย์ แต่ไม่เร่งด่วน</td><td>2–4 สัปดาห์ หรือ 1–3 เดือน ตามรายการ</td><td>พยาบาลนัดคิว + ส่งใบปรึกษา</td></tr>
+            <tr><td><span class="chip L3">เร่งด่วน</span></td><td>เสี่ยงสูญเสียการมองเห็นถ้าล่าช้า</td><td>ภายใน 1 สัปดาห์</td><td>โทรประสานคลินิกตาเพื่อคิวด่วน</td></tr>
+            <tr><td><span class="chip L4">ฉุกเฉิน</span></td><td>มีอาการเตือน หรือค่าที่อาจทำลายจอตาหรือประสาทตาเฉียบพลัน</td><td>วันนี้</td><td>โทรแจ้งจักษุแพทย์ / ห้องฉุกเฉิน แล้วพาไปส่ง</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="two">
+      <section>
+        <h3>Visual acuity</h3>
+        <p class="lead">ใช้ VA ที่ดีที่สุดระหว่าง VA ปกติกับ pinhole ของแต่ละตา ตรวจขณะใส่แว่นที่ใช้ประจำ</p>
+        <div class="tablewrap"><table>
+          <thead><tr><th>VA ที่ดีที่สุด</th><th>แปลผล / การจัดการ</th><th>ระดับ</th></tr></thead>
+          <tbody>
+            <tr><td class="n">≥ 20/30 (6/9)</td><td>ปกติ</td><td><span class="chip L0">ปกติ</span></td></tr>
+            <tr><td class="n">VA &lt; 20/30<br>PH ≥ 20/30</td><td>สายตาผิดปกติที่แก้ได้ด้วยเลนส์ แนะนำวัดสายตาตัดแว่นหรือเปลี่ยนแว่น</td><td><span class="chip L1">แนะนำ</span></td></tr>
+            <tr><td class="n">20/40–20/50<br>(6/12–6/15)</td><td>ไม่ดีขึ้นเต็มที่ด้วย pinhole นัดตรวจหาสาเหตุ เช่น ต้อกระจก จอตา</td><td><span class="chip L2">นัด 1–3 เดือน</span></td></tr>
+            <tr><td class="n">20/70–20/200<br>(6/21–6/60)</td><td>สายตาเลือนรางปานกลาง</td><td><span class="chip L2">นัด 2–4 สัปดาห์</span></td></tr>
+            <tr><td class="n">&lt; 20/200, CF,<br>HM, PL, NPL</td><td>สายตาเลือนรางรุนแรง ถ้าทราบสาเหตุเดิมและติดตามกับจักษุแพทย์อยู่แล้ว ลดเป็นแนะนำติดตามนัดเดิม</td><td><span class="chip L3">เร่งด่วน</span></td></tr>
+            <tr><td>ร่วมกับอาการเฉียบพลัน</td><td>ดูหัวข้ออาการเตือน</td><td><span class="chip L4">ฉุกเฉิน</span></td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">ถ้า VA &lt; 20/30 แต่ไม่ได้ทำ pinhole ระบบจะถือว่าไม่ดีขึ้นและเตือนให้ทำ pinhole ก่อนสรุป · งานขับขี่/ควบคุมเครื่องจักร: ตาข้างที่ดีกว่าควรได้ ≥ 20/40 (6/12) ขณะใส่แว่น ปรับตามข้อกำหนดของแต่ละองค์กรหรือกฎหมายเฉพาะงาน</p>
+      </section>
+
+      <section>
+        <h3>ความดันลูกตา (NCT)</h3>
+        <p class="lead">ใช้ค่าเฉลี่ย 3 ครั้งต่อตา ค่า NCT อาจสูงเกินจริงในกระจกตาหนาหรือผู้ที่เกร็ง/กลั้นหายใจ</p>
+        <div class="tablewrap"><table>
+          <thead><tr><th>IOP (mmHg)</th><th>แปลผล / การจัดการ</th><th>ระดับ</th></tr></thead>
+          <tbody>
+            <tr><td class="n">&lt; 6</td><td>ต่ำผิดปกติ วัดซ้ำก่อน ถ้ายืนยันให้นัด</td><td><span class="chip L2">นัด 2–4 สัปดาห์</span></td></tr>
+            <tr><td class="n">6–21</td><td>ปกติ</td><td><span class="chip L0">ปกติ</span></td></tr>
+            <tr><td class="n">22–24</td><td>ค่าก้ำกึ่ง วัดซ้ำ ตรวจซ้ำปีละครั้ง · มีญาติเป็นต้อหิน หรือ SE ≤ −6.00 D ในตานั้น ให้นัด</td><td><span class="chip L1">แนะนำ</span> / <span class="chip L2">นัด 1–3 เดือน</span></td></tr>
+            <tr><td class="n">25–29</td><td>ความดันตาสูง สงสัยต้อหิน</td><td><span class="chip L2">นัด 1–3 เดือน</span></td></tr>
+            <tr><td class="n">30–39</td><td>สูงมาก เสี่ยงทำลายประสาทตา</td><td><span class="chip L3">เร่งด่วน</span></td></tr>
+            <tr><td class="n">≥ 40</td><td>เสี่ยงต้อหินเฉียบพลัน โดยเฉพาะถ้ามีปวดตา ตาแดง เห็นรุ้ง</td><td><span class="chip L4">ฉุกเฉิน</span></td></tr>
+            <tr><td class="n">OD–OS ต่าง ≥ 5</td><td>ความดันสองตาไม่สมมาตร</td><td><span class="chip L2">นัด 1–3 เดือน</span></td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section>
+        <h3>ตาบอดสี (Ishihara)</h3>
+        <p class="lead">ตรวจใต้แสงธรรมชาติหรือโคมแสงกลางวัน ระยะ 75 ซม. แผ่นละไม่เกิน 3 วินาที นับเฉพาะแผ่นคัดกรองตามชุด</p>
+        <div class="tablewrap"><table>
+          <thead><tr><th>ชุดแผ่น</th><th class="n">ปกติ</th><th class="n">ก้ำกึ่ง</th><th class="n">พร่องการเห็นสี</th></tr></thead>
+          <tbody>
+            <tr><td>38 แผ่น (แผ่น 1–21)</td><td class="n">≥ 17</td><td class="n">14–16</td><td class="n">≤ 13</td></tr>
+            <tr><td>24 แผ่น (แผ่น 1–15)</td><td class="n">≥ 13</td><td class="n">10–12</td><td class="n">≤ 9</td></tr>
+            <tr><td>14 แผ่น (แผ่น 1–11)</td><td class="n">≥ 10</td><td class="n">8–9</td><td class="n">≤ 7</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">ก้ำกึ่ง → <span class="chip L1">แนะนำ</span> ทวนซ้ำ · พร่องการเห็นสีแต่กำเนิด (พบในชายราว 8%) → <span class="chip L1">แนะนำ</span> แจ้งผลและให้คำแนะนำ ไม่ต้องรักษา · ถ้าเคยปกติมาก่อนหรือสองตาต่างกัน สงสัยเกิดภายหลังจากโรคจอตา/ประสาทตา → <span class="chip L2">นัด 2–4 สัปดาห์</span> · งานที่ต้องแยกสี: ส่งแพทย์อาชีวเวชศาสตร์ประเมินความเหมาะสมกับงาน และทดสอบเพิ่มด้วย Farnsworth D-15</p>
+      </section>
+
+      <section>
+        <h3>Auto refraction</h3>
+        <p class="lead">แปลร่วมกับ VA เสมอ ค่าสายตาเพียงอย่างเดียวที่ VA ปกติไม่ต้องส่งต่อ ยกเว้นรายการด้านล่าง</p>
+        <div class="tablewrap"><table>
+          <thead><tr><th>ค่าที่พบ</th><th>แปลผล / การจัดการ</th><th>ระดับ</th></tr></thead>
+          <tbody>
+            <tr><td class="n">SE −0.50 ถึง −5.75<br>หรือ ≤ +2.75</td><td>สายตาสั้น/ยาวทั่วไป แปลตาม VA</td><td><span class="chip L0">ปกติ</span></td></tr>
+            <tr><td class="n">SE ≤ −6.00</td><td>สายตาสั้นมาก แนะนำตรวจจอตาขยายม่านตาปีละครั้ง (เสี่ยงจอตาฉีกขาด)</td><td><span class="chip L1">แนะนำ</span></td></tr>
+            <tr><td class="n">SE ≤ −10.00</td><td>เสี่ยง pathologic myopia</td><td><span class="chip L2">นัด 1–3 เดือน</span></td></tr>
+            <tr><td class="n">SE ≥ +3.00</td><td>สายตายาวมาก แนะนำวัดแว่น · อายุ ≥ 40 ปี เสี่ยงมุมตาแคบ แจ้งอาการต้อหินเฉียบพลัน</td><td><span class="chip L1">แนะนำ</span></td></tr>
+            <tr><td class="n">|Cyl| ≥ 3.00</td><td>สายตาเอียงมาก แยกโรคกระจกตาโก่ง (keratoconus)</td><td><span class="chip L2">นัด 1–3 เดือน</span></td></tr>
+            <tr><td class="n">SE สองตาต่าง ≥ 2.00</td><td>Anisometropia แนะนำวัดแว่นโดยนักทัศนมาตร/จักษุแพทย์</td><td><span class="chip L1">แนะนำ</span></td></tr>
+            <tr><td>วัดไม่ได้ (ERR)</td><td>VA ปกติ: วัดซ้ำ · VA ลดลง: สงสัยสื่อกลางตาขุ่น เช่น ต้อกระจก</td><td><span class="chip L1">แนะนำ</span> / <span class="chip L2">นัด 2–4 สัปดาห์</span></td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section>
+        <h3>อาการเตือนและประวัติ</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>รายการ</th><th>การจัดการ</th><th>ระดับ</th></tr></thead>
+          <tbody>
+            <tr><td>ตามัวเฉียบพลัน</td><td rowspan="6">หยุดคัดกรอง โทรแจ้งจักษุแพทย์/ห้องฉุกเฉิน พาไปส่ง ไม่ต้องรอผลรายการอื่น</td><td><span class="chip L4">ฉุกเฉิน</span></td></tr>
+            <tr><td>ปวดตามาก / ตาแดงร่วมตามัว</td><td><span class="chip L4">ฉุกเฉิน</span></td></tr>
+            <tr><td>แสงวาบ จุดลอยใหม่ ม่านบัง</td><td><span class="chip L4">ฉุกเฉิน</span></td></tr>
+            <tr><td>เห็นรุ้ง ปวดศีรษะ คลื่นไส้</td><td><span class="chip L4">ฉุกเฉิน</span></td></tr>
+            <tr><td>อุบัติเหตุ / สารเคมี</td><td><span class="chip L4">ฉุกเฉิน</span></td></tr>
+            <tr><td>ภาพซ้อนเกิดใหม่</td><td><span class="chip L4">ฉุกเฉิน</span></td></tr>
+            <tr><td>เบาหวาน</td><td>ตรวจจอตาขยายม่านตาปีละครั้ง (ถ้ายังไม่ได้ติดตาม)</td><td><span class="chip L1">แนะนำ</span></td></tr>
+            <tr><td>ญาติเป็นต้อหิน</td><td>อายุ ≥ 40 ปี แนะนำตรวจต้อหินละเอียดทุก 1–2 ปี และใช้เป็นปัจจัยเสี่ยงในการแปลผล IOP</td><td><span class="chip L1">แนะนำ</span></td></tr>
+          </tbody>
+        </table></div>
+      </section>
+    </div>
+
+    <div class="disclaimer">
+      เกณฑ์นี้เป็นร่างสำหรับการคัดกรองเบื้องต้น ควรผ่านการรับรองจากทีมจักษุแพทย์ของโรงพยาบาลก่อนใช้งานจริง และทบทวนทุก 6 เดือนจากผลการตรวจยืนยัน ระบบช่วยแปลผลไม่แทนดุลยพินิจทางคลินิก หากพยาบาลหรือแพทย์เห็นว่าผู้รับบริการมีอาการไม่สอดคล้องกับค่าที่วัด ให้ยกระดับการส่งต่อได้เสมอ การคัดกรองนี้ไม่ได้ตรวจจอประสาทตา ลานสายตา หรือสายตาระยะใกล้ (presbyopia)
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLOW ================= -->
+<section data-view="flow" hidden>
+  <div class="view-head">
+    <div>
+      <h2>Flow การตรวจและการส่งปรึกษา</h2>
+      <p>พยาบาลศูนย์ตรวจสุขภาพทำการตรวจและแจ้งผลกลุ่มปกติ/แนะนำได้ทันที ส่งเฉพาะกลุ่มผิดปกติให้จักษุแพทย์ที่อีกตึก</p>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <h3>ลำดับการตรวจที่จุดตรวจตา</h3>
+      <ol class="steps">
+        <li><div><h4>ลงทะเบียนและถามอาการเตือน</h4><p>ยืนยันตัวตน HN ถามอาการเตือน 6 ข้อและประวัติ เบาหวาน ต้อหินในครอบครัว การติดตามกับจักษุแพทย์</p><div class="gate">มีอาการเตือนข้อใดข้อหนึ่ง → หยุดคัดกรอง ส่งช่องฉุกเฉินทันที</div></div></li>
+        <li><div><h4>Visual acuity ทีละตา</h4><p>ระยะ 6 เมตร ใส่แว่นที่ใช้ประจำ ปิดตาอีกข้าง ถ้าแย่กว่า 20/30 ทำ pinhole</p></div></li>
+        <li><div><h4>ตาบอดสี Ishihara</h4><p>แสงกลางวันหรือโคมมาตรฐาน ระยะ 75 ซม. แผ่นละไม่เกิน 3 วินาที</p></div></li>
+        <li><div><h4>Auto refraction</h4><p>วัด 3 ค่าต่อตา บันทึกค่าที่เครื่องสรุป ถ้าขึ้น ERR ให้วัดซ้ำ 1 ครั้งก่อนบันทึกว่าวัดไม่ได้</p></div></li>
+        <li><div><h4>ความดันลูกตา NCT</h4><p>ทำหลัง VA เพราะลมอาจทำให้น้ำตาไหลและภาพมัว ใช้ค่าเฉลี่ย 3 ครั้ง ถ้าค่า ≥ 22 วัดซ้ำอีกรอบก่อนบันทึก</p></div></li>
+        <li><div><h4>ลงผลในระบบและตรวจทาน</h4><p>ระบบแปลผลและเสนอระดับ พยาบาลตรวจทานความถูกต้องของค่าที่กรอก ยกระดับได้ถ้าอาการไม่สอดคล้อง</p></div></li>
+        <li><div><h4>ดำเนินการตามระดับ</h4><p>ดูช่องทางทั้ง 5 ระดับด้านล่าง แจกเอกสารผลให้ผู้รับบริการทุกราย</p></div></li>
+        <li><div><h4>จักษุแพทย์ทบทวนย้อนหลัง</h4><p>สัปดาห์ละครั้ง ทบทวนกลุ่มแนะนำทั้งหมดและสุ่มกลุ่มปกติ 10% เพื่อควบคุมคุณภาพ</p></div></li>
+      </ol>
+    </div>
+
+    <div class="panel">
+      <h3>ช่องทางส่งปรึกษาจักษุแพทย์ (ต่างตึก)</h3>
+      <div class="consult">
+        <div><b>1. ใบปรึกษาจากระบบ</b>คัดลอกใบส่งปรึกษาที่ระบบสร้าง แนบในระบบนัด/HIS พร้อมค่าตรวจครบทุกรายการ</div>
+        <div><b>2. นัดคิว</b>พยาบาลจองคิวคลินิกตาตามระยะเวลาของระดับ ผู้รับบริการไม่ต้องเดินไปอีกตึกในวันตรวจ</div>
+        <div><b>3. จักษุแพทย์ทบทวน</b>อ่านใบปรึกษาภายใน 1 วันทำการ ยืนยันนัด ปรับระดับ หรือตอบเป็นคำแนะนำโดยไม่ต้องมาพบ</div>
+        <div><b>4. ปิดเคส</b>บันทึกผลตรวจยืนยันกลับในระบบ ใช้คำนวณความแม่นยำของเกณฑ์</div>
+      </div>
+      <h3 style="margin-top:18px">ตัวชี้วัดที่ควรติดตาม</h3>
+      <ul>
+        <li>สัดส่วนผู้รับบริการแต่ละระดับ (คาดว่ากลุ่มนัด + เร่งด่วน + ฉุกเฉิน ไม่เกิน 10–15%)</li>
+        <li>ระยะเวลาจากวันตรวจถึงวันพบจักษุแพทย์ เทียบกับเป้าหมายของแต่ละระดับ</li>
+        <li>สัดส่วนที่จักษุแพทย์ยืนยันว่าผิดปกติจริง (positive predictive value) เพื่อปรับเกณฑ์</li>
+        <li>สัดส่วนผู้ที่ไม่มาตามนัด และการติดตามซ้ำ</li>
+        <li>บันทึกสอบเทียบเครื่อง NCT และ auto refractor ตามรอบที่ผู้ผลิตกำหนด</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="font-size:18px;margin:24px 0 8px">การดำเนินการตามระดับ</h3>
+  <div class="lanes">
+    <div class="lane L0"><h4>ปกติ</h4><div class="tf">แจ้งผลทันที</div><ul><li>พยาบาลแจ้งผลและแจกเอกสาร</li><li>ตรวจซ้ำในรอบตรวจสุขภาพถัดไป</li></ul></div>
+    <div class="lane L1"><h4>แนะนำ / ติดตาม</h4><div class="tf">แจ้งผลทันที + คำแนะนำ</div><ul><li>ให้คำแนะนำตามรายการ เช่น ตัดแว่น ตรวจจอตาประจำปี</li><li>ไม่ต้องนัดจากศูนย์</li><li>จักษุแพทย์ทบทวนย้อนหลังรายสัปดาห์</li></ul></div>
+    <div class="lane L2"><h4>นัดพบจักษุแพทย์</h4><div class="tf">2–4 สัปดาห์ หรือ 1–3 เดือน</div><ul><li>แจ้งผลว่าต้องตรวจยืนยัน ไม่ใช่การวินิจฉัยโรค</li><li>จองคิวคลินิกตา + ส่งใบปรึกษา</li><li>นัดวันพบก่อนผู้รับบริการกลับ</li></ul></div>
+    <div class="lane L3"><h4>เร่งด่วน</h4><div class="tf">ภายใน 1 สัปดาห์</div><ul><li>โทรประสานคลินิกตา/จักษุแพทย์เพื่อคิวด่วน</li><li>ส่งใบปรึกษาทันที</li><li>โทรยืนยันกับผู้รับบริการก่อนวันนัด</li></ul></div>
+    <div class="lane L4"><h4>ฉุกเฉิน</h4><div class="tf">วันนี้</div><ul><li>โทรแจ้งจักษุแพทย์เวร/ห้องฉุกเฉินก่อนส่ง</li><li>มีเจ้าหน้าที่พาไปส่ง ไม่ให้เดินไปเอง</li><li>ส่งใบปรึกษาพร้อมผู้ป่วย</li></ul></div>
+  </div>
+</section>
+</main>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+
+/* ---------- reference data ---------- */
+const VA=[
+ ['20/15','6/4.5'],['20/20','6/6'],['20/25','6/7.5'],['20/30','6/9'],['20/40','6/12'],['20/50','6/15'],
+ ['20/70','6/21'],['20/100','6/30'],['20/200','6/60'],['20/400','6/120'],
+ ['CF','นับนิ้ว'],['HM','โบกมือ'],['PL','เห็นแสง'],['NPL','ไม่เห็นแสง']
+];
+const vaLabel=i=>VA[i][0].startsWith('20/')?`${VA[i][0]} (${VA[i][1]})`:`${VA[i][0]} ${VA[i][1]}`;
+const LV=[
+ {name:'ปกติ',act:'แจ้งผลผู้รับบริการได้ทันที'},
+ {name:'แนะนำ / ติดตาม',act:'แจ้งผลพร้อมคำแนะนำ ไม่ต้องนัดจักษุแพทย์'},
+ {name:'นัดพบจักษุแพทย์',act:'จองคิวคลินิกตาและส่งใบปรึกษา'},
+ {name:'เร่งด่วน',act:'โทรประสานคลินิกตาเพื่อคิวด่วน และส่งใบปรึกษาทันที'},
+ {name:'ฉุกเฉิน',act:'โทรแจ้งจักษุแพทย์เวร/ห้องฉุกเฉิน แล้วพาไปส่งทันที'}
+];
+const TIME={L2a:'ภายใน 2–4 สัปดาห์',L2b:'ภายใน 1–3 เดือน',L3:'ภายใน 1 สัปดาห์',L4:'วันนี้'};
+const ED={'38':{max:21,ok:17,def:13},'24':{max:15,ok:13,def:9},'14':{max:11,ok:10,def:7}};
+const RF={rf_sudden:'ตามัวหรือมองไม่เห็นทันทีทันใด',rf_pain:'ปวดตามาก / ตาแดงร่วมกับตามัว',rf_flash:'แสงวาบ จุดดำลอยใหม่ หรือม่านบังภาพ',rf_halo:'เห็นรุ้งรอบดวงไฟ ร่วมปวดศีรษะ คลื่นไส้',rf_trauma:'อุบัติเหตุที่ตา / สารเคมีเข้าตา',rf_diplopia:'ภาพซ้อนที่เพิ่งเกิด'};
+
+/* ---------- fill selects ---------- */
+['va_od','va_os','ph_od','ph_os'].forEach(id=>{
+  const s=$(id); s.innerHTML=`<option value="">${id.startsWith('ph')?'ไม่ได้ทำ':'—'}</option>`+VA.map((v,i)=>`<option value="${i}">${vaLabel(i)}</option>`).join('');
+});
+
+/* ---------- read form ---------- */
+const num=id=>{const v=$(id).value.trim();return v===''?null:Number(v)};
+const idx=id=>{const v=$(id).value;return v===''?null:Number(v)};
+const ck=id=>$(id).checked;
+function read(){
+  return {
+    hn:$('hn').value.trim(),name:$('pname').value.trim(),age:num('age'),sex:$('sex').value,org:$('org').value.trim(),
+    job:$('job').value,examiner:$('examiner').value.trim(),
+    rf:Object.keys(RF).filter(ck),glasses:ck('h_glasses'),dm:ck('h_dm'),fhg:ck('h_fhg'),follow:ck('h_follow'),
+    va:{od:idx('va_od'),os:idx('va_os')},ph:{od:idx('ph_od'),os:idx('ph_os')},
+    col:{ed:$('col_ed').value,n:num('col_n'),isNew:ck('col_new')},
+    iop:{od:num('iop_od'),os:num('iop_os')},
+    ar:{od:{sph:num('sph_od'),cyl:num('cyl_od'),ax:num('ax_od'),err:ck('err_od')},os:{sph:num('sph_os'),cyl:num('cyl_os'),ax:num('ax_os'),err:ck('err_os')}}
+  };
+}
+const fmtD=v=>v==null?'—':(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(2);
+const se=a=>(a.sph==null)?null:a.sph+(a.cyl||0)/2;
+const EYE={od:'ตาขวา',os:'ตาซ้าย'};
+
+/* ---------- interpret ---------- */
+function interpret(d){
+  const F=[]; const add=(test,level,text,advice,time)=>F.push({test,level,text,advice:advice||'',time:time||null});
+  const missing=[];
+  d.rf.forEach(k=>add('อาการเตือน',4,`<b>${RF[k]}</b>`,'หยุดคัดกรอง ส่งพบจักษุแพทย์/ห้องฉุกเฉินทันที','L4'));
+
+  /* VA */
+  const best={};
+  ['od','os'].forEach(e=>{
+    const v=d.va[e],p=d.ph[e];
+    if(v==null){best[e]=null;return}
+    const b=p==null?v:Math.min(v,p); best[e]=b;
+    const phTxt=p!=null?` → pinhole ${VA[p][0]}`:'';
+    const lab=`<b>VA ${EYE[e]} ${VA[v][0]}</b>${phTxt}`;
+    if(v<=3){add('VA',0,`${lab} ปกติ`);return}
+    if(b<=3){add('VA',1,`${lab} ดีขึ้นเป็นปกติด้วย pinhole`,'สายตาผิดปกติที่แก้ได้ด้วยเลนส์ แนะนำวัดสายตาตัดแว่น/เปลี่ยนแว่น');return}
+    const noPH=p==null?' (ยังไม่ได้ทำ pinhole ควรทำก่อนสรุป)':'';
+    if(b<=5) add('VA',2,`${lab} ไม่ดีขึ้นเป็นปกติ${noPH}`,'นัดตรวจหาสาเหตุ เช่น ต้อกระจก โรคจอตา','L2b');
+    else if(b<=8) add('VA',2,`${lab} สายตาเลือนรางปานกลาง${noPH}`,'นัดจักษุแพทย์ตรวจหาสาเหตุ','L2a');
+    else if(d.follow) add('VA',1,`${lab} สายตาเลือนรางรุนแรง ทราบสาเหตุและติดตามอยู่แล้ว`,'ติดตามตามนัดเดิม ถ้าแย่ลงให้มาก่อนนัด');
+    else add('VA',3,`${lab} สายตาเลือนรางรุนแรง`,'ประสานคิวด่วน หากเพิ่งเป็นไม่นานให้ถามอาการเฉียบพลันซ้ำ','L3');
+  });
+  if(d.va.od==null||d.va.os==null) missing.push('VA');
+
+  /* refraction (needed before IOP for risk) */
+  const SE={od:se(d.ar.od),os:se(d.ar.os)};
+  ['od','os'].forEach(e=>{
+    const a=d.ar[e];
+    if(a.err){
+      if(best[e]!=null&&best[e]>=4) add('Auto refraction',2,`<b>${EYE[e]} วัดค่าไม่ได้</b> ร่วมกับ VA ลดลง`,'สงสัยสื่อกลางตาขุ่น เช่น ต้อกระจก แผลเป็นกระจกตา','L2a');
+      else add('Auto refraction',1,`<b>${EYE[e]} วัดค่าไม่ได้</b>`,'วัดซ้ำ ถ้ายังวัดไม่ได้ให้ระบุในผลและตรวจซ้ำรอบถัดไป');
+      return;
+    }
+    if(a.sph==null) return;
+    const s=SE[e], c=a.cyl||0;
+    const rx=`${fmtD(a.sph)} / ${fmtD(c)} × ${a.ax??'—'}`;
+    const lab=`<b>${EYE[e]} ${rx}</b> <span class="num">SE ${fmtD(s)}</span>`;
+    let any=false;
+    if(s<=-10){add('Auto refraction',2,`${lab} สายตาสั้นมาก`,'เสี่ยง pathologic myopia นัดตรวจจอตาขยายม่านตา','L2b');any=true}
+    else if(s<=-6){add('Auto refraction',1,`${lab} สายตาสั้นมาก`,'แนะนำตรวจจอตาขยายม่านตาปีละครั้ง หากเห็นแสงวาบหรือม่านบังให้มาทันที');any=true}
+    if(s>=3){add('Auto refraction',1,`${lab} สายตายาวมาก`,'แนะนำวัดแว่น'+((d.age||0)>=40?' · อายุ ≥ 40 ปี เสี่ยงมุมตาแคบ แจ้งอาการต้อหินเฉียบพลัน':''));any=true}
+    if(Math.abs(c)>=3){add('Auto refraction',2,`${lab} สายตาเอียงมาก`,'แยกโรคกระจกตาโก่ง (keratoconus)','L2b');any=true}
+    if(!any){
+      const kind=s<=-0.5?'สายตาสั้น':s>=0.75?'สายตายาว':'ใกล้เคียงปกติ';
+      add('Auto refraction',0,`${lab} ${kind}${Math.abs(c)>=1?' ร่วมสายตาเอียง':''}`,'แปลผลร่วมกับ VA');
+    }
+  });
+  if(SE.od!=null&&SE.os!=null&&Math.abs(SE.od-SE.os)>=2)
+    add('Auto refraction',1,`<b>SE สองตาต่างกัน ${Math.abs(SE.od-SE.os).toFixed(2)} D</b> (anisometropia)`,'แนะนำวัดแว่นโดยนักทัศนมาตร/จักษุแพทย์');
+  if((d.ar.od.sph==null&&!d.ar.od.err)||(d.ar.os.sph==null&&!d.ar.os.err)) missing.push('Auto refraction');
+
+  /* IOP */
+  ['od','os'].forEach(e=>{
+    const p=d.iop[e]; if(p==null) return;
+    const lab=`<b>IOP ${EYE[e]} <span class="num">${p}</span> mmHg</b>`;
+    const risk=d.fhg||(SE[e]!=null&&SE[e]<=-6);
+    if(p<6) add('ความดันลูกตา',2,`${lab} ต่ำผิดปกติ`,'วัดซ้ำก่อน ถ้ายืนยันให้นัด','L2a');
+    else if(p<=21) add('ความดันลูกตา',0,`${lab} ปกติ`);
+    else if(p<=24){
+      if(risk) add('ความดันลูกตา',2,`${lab} ก้ำกึ่ง ร่วมกับปัจจัยเสี่ยง${d.fhg?' (ญาติเป็นต้อหิน)':' (สายตาสั้นมาก)'}`,'นัดตรวจคัดกรองต้อหิน','L2b');
+      else add('ความดันลูกตา',1,`${lab} ก้ำกึ่ง`,'วัดซ้ำ และตรวจซ้ำปีละครั้ง');
+    }
+    else if(p<=29) add('ความดันลูกตา',2,`${lab} สูง สงสัยต้อหิน`,'นัดตรวจขั้วประสาทตาและลานสายตา','L2b');
+    else if(p<=39) add('ความดันลูกตา',3,`${lab} สูงมาก`,'เสี่ยงทำลายประสาทตา ประสานคิวด่วน','L3');
+    else add('ความดันลูกตา',4,`${lab} สูงวิกฤต`,'เสี่ยงต้อหินเฉียบพลัน ส่งพบจักษุแพทย์วันนี้','L4');
+  });
+  if(d.iop.od!=null&&d.iop.os!=null&&Math.abs(d.iop.od-d.iop.os)>=5)
+    add('ความดันลูกตา',2,`<b>IOP สองตาต่างกัน ${Math.abs(d.iop.od-d.iop.os)} mmHg</b>`,'ความดันไม่สมมาตร นัดตรวจต้อหิน','L2b');
+  if(d.iop.od==null||d.iop.os==null) missing.push('ความดันลูกตา');
+
+  /* Colour */
+  let colStatus=null;
+  const ed=ED[d.col.ed];
+  if(d.col.n!=null){
+    const n=Math.min(d.col.n,ed.max), lab=`<b>Ishihara ${n}/${ed.max}</b>`;
+    if(n>=ed.ok){colStatus='ok';add('ตาบอดสี',0,`${lab} การเห็นสีปกติ`)}
+    else if(n<=ed.def){
+      colStatus='def';
+      if(d.col.isNew) add('ตาบอดสี',2,`${lab} พร่องการเห็นสี สงสัยเกิดภายหลัง`,'ตรวจหาโรคจอตา/ประสาทตา','L2a');
+      else add('ตาบอดสี',1,`${lab} พร่องการเห็นสี (น่าจะแต่กำเนิด)`,'แจ้งผลและให้คำแนะนำ ไม่ต้องรักษา');
+    } else {colStatus='border';add('ตาบอดสี',1,`${lab} ก้ำกึ่ง`,'ทวนซ้ำใต้แสงมาตรฐาน')}
+  } else missing.push('ตาบอดสี');
+
+  /* History advice */
+  if(d.dm&&!d.follow) add('ประวัติ',1,'<b>เบาหวาน</b>','ตรวจจอตาขยายม่านตาปีละครั้ง');
+  if(d.fhg&&(d.age||0)>=40) add('ประวัติ',1,'<b>ญาติเป็นต้อหิน</b> อายุ ≥ 40 ปี','ตรวจต้อหินละเอียดทุก 1–2 ปี');
+
+  /* overall */
+  let lvl=F.length?Math.max(...F.map(f=>f.level)):-1;
+  const rank={L4:0,L3:1,L2a:2,L2b:3};
+  const times=F.filter(f=>f.level===lvl&&f.time).map(f=>f.time).sort((a,b)=>rank[a]-rank[b]);
+  const time=lvl>=2?(times[0]?TIME[times[0]]:TIME.L2b):null;
+
+  /* occupational */
+  const occ=[];
+  if(d.job==='driver'){
+    const bb=[best.od,best.os].filter(x=>x!=null);
+    if(bb.length){const b=Math.min(...bb);
+      occ.push(b<=4?{ok:true,t:`VA ตาข้างที่ดีกว่า ${VA[b][0]} ผ่านเกณฑ์งานขับขี่ (≥ 20/40)`}:{ok:false,t:`VA ตาข้างที่ดีกว่า ${VA[b][0]} ต่ำกว่าเกณฑ์งานขับขี่ (≥ 20/40) ส่งแพทย์อาชีวเวชศาสตร์ประเมินความเหมาะสมกับงาน`});}
+    else occ.push({ok:null,t:'รอผล VA เพื่อประเมินเกณฑ์งานขับขี่'});
+  }
+  if(d.job==='color'){
+    if(colStatus==='ok') occ.push({ok:true,t:'การเห็นสีผ่านเกณฑ์งานที่ต้องแยกสี'});
+    else if(colStatus==='def') occ.push({ok:false,t:'ไม่ผ่านเกณฑ์งานที่ต้องแยกสี ส่งแพทย์อาชีวเวชศาสตร์ประเมิน และทดสอบเพิ่มด้วย Farnsworth D-15'});
+    else if(colStatus==='border') occ.push({ok:null,t:'ผลก้ำกึ่ง ทวนซ้ำก่อนสรุปความเหมาะสมกับงาน'});
+    else occ.push({ok:null,t:'รอผลตาบอดสีเพื่อประเมินเกณฑ์งาน'});
+  }
+  return {F,lvl,time,missing,occ,best,SE};
+}
+
+/* ---------- messages ---------- */
+function today(){const t=new Date();return t.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'})}
+function strip(h){const x=document.createElement('div');x.innerHTML=h;return x.textContent}
+function patientMsg(d,r){
+  const L=[];
+  L.push(`ผลตรวจคัดกรองสายตา ${today()}`);
+  if(d.name||d.hn) L.push(`${d.name||''}${d.hn?` HN ${d.hn}`:''}`.trim());
+  L.push('');
+  if(r.lvl<0){L.push('ยังไม่มีผลตรวจ');return L.join('\n')}
+  if(r.lvl===0) L.push('ผลการตรวจคัดกรองสายตาอยู่ในเกณฑ์ปกติ');
+  else if(r.lvl===1) L.push('ผลการตรวจคัดกรองพบข้อควรดูแลเล็กน้อย ยังไม่จำเป็นต้องพบจักษุแพทย์จากการตรวจครั้งนี้');
+  else if(r.lvl===2) L.push(`ผลการตรวจคัดกรองพบค่าที่ควรได้รับการตรวจยืนยันโดยจักษุแพทย์ ${r.time} ผลนี้เป็นการคัดกรอง ยังไม่ใช่การวินิจฉัยโรค เจ้าหน้าที่จะนัดหมายให้`);
+  else if(r.lvl===3) L.push(`ผลการตรวจคัดกรองพบค่าที่ควรพบจักษุแพทย์ ${r.time} เจ้าหน้าที่จะประสานนัดด่วนให้`);
+  else L.push('ควรพบจักษุแพทย์วันนี้ เจ้าหน้าที่จะพาไปพบแพทย์');
+  const adv=[...new Set(r.F.filter(f=>f.level===1).map(f=>f.advice).filter(Boolean))];
+  if(adv.length){L.push('');L.push('คำแนะนำ');adv.forEach(a=>L.push('• '+a))}
+  if((d.age||0)>=40) L.push('• อายุตั้งแต่ 40 ปี ควรตรวจสุขภาพตาโดยละเอียดทุก 1–2 ปี');
+  L.push('');L.push('หากมีตามัวทันที ปวดตามาก ตาแดง เห็นแสงวาบหรือม่านบังภาพ ให้พบแพทย์ทันที');
+  return L.join('\n');
+}
+function consultMsg(d,r){
+  const vaS=e=>d.va[e]==null?'—':VA[d.va[e]][0]+(d.ph[e]!=null?` (PH ${VA[d.ph[e]][0]})`:'');
+  const arS=e=>{const a=d.ar[e];if(a.err)return 'วัดไม่ได้';if(a.sph==null)return '—';return `${fmtD(a.sph)} / ${fmtD(a.cyl||0)} × ${a.ax??'—'} (SE ${fmtD(se(a))})`};
+  const L=[];
+  L.push(`เรียน จักษุแพทย์`);
+  L.push(`ขอส่งปรึกษาจากศูนย์ตรวจสุขภาพ ระดับ: ${LV[r.lvl].name} (${r.time})`);
+  L.push('');
+  L.push(`ผู้รับบริการ: ${d.name||'—'}  HN ${d.hn||'—'}  อายุ ${d.age??'—'} ปี  เพศ ${d.sex||'—'}`);
+  if(d.org) L.push(`องค์กร: ${d.org}`);
+  const hx=[d.dm&&'เบาหวาน',d.fhg&&'ญาติเป็นต้อหิน',d.follow&&'ติดตามกับจักษุแพทย์อยู่แล้ว',d.glasses&&'ตรวจขณะใส่แว่น/คอนแทคเลนส์'].filter(Boolean);
+  L.push(`อาการเตือน: ${d.rf.length?d.rf.map(k=>RF[k]).join(', '):'ไม่มี'}`);
+  L.push(`ประวัติ: ${hx.length?hx.join(', '):'ไม่มี'}`);
+  L.push('');
+  L.push('ผลตรวจ          OD | OS');
+  L.push(`VA:            ${vaS('od')} | ${vaS('os')}`);
+  L.push(`IOP (NCT):     ${d.iop.od??'—'} | ${d.iop.os??'—'} mmHg`);
+  L.push(`Auto ref:      ${arS('od')} | ${arS('os')}`);
+  L.push(`Ishihara:      ${d.col.n!=null?`${d.col.n}/${ED[d.col.ed].max} (ชุด ${d.col.ed} แผ่น)`:'—'}`);
+  L.push('');
+  L.push('ประเด็นที่ขอปรึกษา');
+  r.F.filter(f=>f.level>=2).sort((a,b)=>b.level-a.level).forEach(f=>L.push(`• [${LV[f.level].name}] ${strip(f.text)}${f.advice?' — '+f.advice:''}`));
+  L.push('');
+  L.push(`ผู้ส่ง: ${d.examiner||'—'}  วันที่ ${today()}`);
+  return L.join('\n');
+}
+
+/* ---------- render ---------- */
+let current=null;
+function render(){
+  const d=read(), r=interpret(d); current={d,r};
+  const v=$('verdict');
+  if(r.lvl<0){
+    v.className='verdict LX';
+    v.innerHTML=`<div class="lvl"><span class="dot"></span><h3>รอผลตรวจ</h3></div><p class="act">กรอกผลอย่างน้อยหนึ่งรายการเพื่อเริ่มแปลผล</p>`;
+  } else {
+    v.className='verdict L'+r.lvl;
+    v.innerHTML=`<div class="lvl"><span class="dot"></span><h3>${LV[r.lvl].name}</h3></div>`+
+      (r.time?`<div class="time">พบจักษุแพทย์ ${r.time}</div>`:'')+
+      `<p class="act">${LV[r.lvl].act}</p>`+
+      (r.missing.length&&r.lvl<4?`<p class="warn">ยังไม่ได้ลงผล: ${r.missing.join(', ')} ผลรวมอาจเปลี่ยน</p>`:'');
+  }
+  const order={'อาการเตือน':0,'VA':1,'ความดันลูกตา':2,'Auto refraction':3,'ตาบอดสี':4,'ประวัติ':5};
+  const list=[...r.F].sort((a,b)=>(order[a.test]-order[b.test]));
+  $('findings').innerHTML=list.length?list.map(f=>`<li><span class="chip L${f.level}">${f.level===2?(f.time==='L2a'?'นัด 2–4 สัปดาห์':'นัด 1–3 เดือน'):LV[f.level].name}</span><span class="t">${f.text}</span>${f.advice&&f.level>0?`<span class="a">${f.advice}</span>`:''}</li>`).join(''):'<li><span class="t" style="grid-column:1/-1;color:var(--muted)">ยังไม่มีผลตรวจ</span></li>';
+  $('occCard').hidden=!r.occ.length;
+  $('occ').innerHTML=r.occ.map(o=>`<p class="occ${o.ok===false?' fail':''}" style="margin:0 0 4px">${o.ok===true?'ผ่าน · ':o.ok===false?'ไม่ผ่าน · ':'รอผล · '}${o.t}</p>`).join('');
+  $('msgPatient').textContent=patientMsg(d,r);
+  $('consultCard').hidden=r.lvl<2;
+  if(r.lvl>=2) $('msgConsult').textContent=consultMsg(d,r);
+}
+
+/* ---------- examples ---------- */
+const EX={
+  normal:{hn:'EX-0001',pname:'ตัวอย่าง ปกติ',age:32,sex:'หญิง',org:'บริษัทตัวอย่าง จำกัด',job:'general',examiner:'พยาบาลตัวอย่าง',va_od:1,va_os:2,col_ed:'38',col_n:21,iop_od:15,iop_os:16,sph_od:-0.5,cyl_od:-0.25,ax_od:180,sph_os:-0.75,cyl_os:-0.5,ax_os:170},
+  advice:{hn:'EX-0002',pname:'ตัวอย่าง แนะนำ',age:45,sex:'ชาย',org:'บริษัทตัวอย่าง จำกัด',job:'general',examiner:'พยาบาลตัวอย่าง',h_dm:true,va_od:5,ph_od:2,va_os:4,ph_os:2,col_ed:'38',col_n:21,iop_od:23,iop_os:19,sph_od:-2.75,cyl_od:-0.75,ax_od:180,sph_os:-2.25,cyl_os:-0.5,ax_os:10},
+  routine:{hn:'EX-0003',pname:'ตัวอย่าง นัดหมาย',age:52,sex:'ชาย',org:'บริษัทขนส่งตัวอย่าง',job:'driver',examiner:'พยาบาลตัวอย่าง',h_fhg:true,h_glasses:true,va_od:3,va_os:5,ph_os:4,col_ed:'38',col_n:20,iop_od:26,iop_os:19,sph_od:1.25,cyl_od:-0.5,ax_od:90,sph_os:1.5,cyl_os:-0.75,ax_os:85},
+  urgent:{hn:'EX-0004',pname:'ตัวอย่าง เร่งด่วน',age:61,sex:'หญิง',org:'บริษัทตัวอย่าง จำกัด',job:'color',examiner:'พยาบาลตัวอย่าง',va_od:8,ph_od:8,va_os:3,col_ed:'24',col_n:9,iop_od:32,iop_os:18,err_od:true,sph_os:0.75,cyl_os:-0.5,ax_os:95},
+  emergency:{hn:'EX-0005',pname:'ตัวอย่าง ฉุกเฉิน',age:58,sex:'หญิง',org:'บริษัทตัวอย่าง จำกัด',job:'general',examiner:'พยาบาลตัวอย่าง',rf_halo:true,rf_pain:true,va_od:7,ph_od:6,va_os:1,iop_od:48,iop_os:17,sph_od:2.75,cyl_od:-0.5,ax_od:90,sph_os:2.5,cyl_os:-0.25,ax_os:80}
+};
+function clearForm(){
+  document.querySelectorAll('#form input,#form select').forEach(el=>{
+    if(el.type==='checkbox') el.checked=false; else if(el.tagName==='SELECT') el.selectedIndex=0; else el.value='';
+  });
+  updColMax();
+}
+function load(key){
+  clearForm(); const x=EX[key];
+  Object.entries(x).forEach(([k,v])=>{const el=$(k);if(!el)return;if(el.type==='checkbox')el.checked=!!v;else el.value=v});
+  updColMax();
+  document.querySelectorAll('[data-ex]').forEach(b=>b.classList.toggle('on',b.dataset.ex===key));
+  $('exTag').hidden=false; render();
+}
+function updColMax(){const m=ED[$('col_ed').value].max;$('col_max').textContent='/'+m;$('col_n').max=m}
+document.querySelectorAll('[data-ex]').forEach(b=>b.addEventListener('click',()=>load(b.dataset.ex)));
+$('reset').addEventListener('click',()=>{clearForm();document.querySelectorAll('[data-ex]').forEach(b=>b.classList.remove('on'));$('exTag').hidden=true;render()});
+$('col_ed').addEventListener('change',updColMax);
+$('form').addEventListener('input',()=>{$('exTag').hidden=true;document.querySelectorAll('[data-ex]').forEach(b=>b.classList.remove('on'));render()});
+$('form').addEventListener('submit',e=>e.preventDefault());
+
+/* ---------- copy ---------- */
+function toast(t){$('toast').textContent=t;clearTimeout(toast._t);toast._t=setTimeout(()=>$('toast').textContent='',2500)}
+function copyText(text,el){
+  const fallback=()=>{if(el){const s=window.getSelection(),rg=document.createRange();rg.selectNodeContents(el);s.removeAllRanges();s.addRange(rg)}toast('เลือกข้อความแล้ว กด Ctrl/Cmd+C เพื่อคัดลอก')};
+  try{navigator.clipboard.writeText(text).then(()=>toast('คัดลอกแล้ว'),fallback)}catch(e){fallback()}
+}
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{const el=$(b.dataset.copy);copyText(el.textContent,el)}));
+
+/* ---------- today list (in-memory) ---------- */
+const rows=[];
+function renderToday(){
+  const tb=$('todayBody');
+  tb.innerHTML=rows.length?rows.map(r=>`<tr><td class="num">${r.t}</td><td class="num">${r.hn||'—'}</td><td>${r.name||'—'}</td><td>${r.org||'—'}</td><td><span class="chip L${r.lvl}">${LV[r.lvl].name}</span></td><td>${r.time||'—'}</td><td>${r.issues||'—'}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">ยังไม่มีรายการ กด "เพิ่มเข้ารายการวันนี้" หลังแปลผลแต่ละราย</td></tr>`;
+  $('counts').innerHTML=[0,1,2,3,4].map(i=>{const n=rows.filter(r=>r.lvl===i).length;return n?`<span class="chip L${i}">${LV[i].name} ${n}</span>`:''}).join('');
+}
+$('addToday').addEventListener('click',()=>{
+  if(!current||current.r.lvl<0){toast('ยังไม่มีผลตรวจให้บันทึก');return}
+  const {d,r}=current;
+  const issues=r.F.filter(f=>f.level===r.lvl&&r.lvl>0).map(f=>strip(f.text)).join('; ');
+  rows.unshift({t:new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}),hn:d.hn,name:d.name,org:d.org,lvl:r.lvl,time:r.time,issues});
+  renderToday(); toast('เพิ่มแล้ว');
+});
+$('copyTable').addEventListener('click',()=>{
+  const head=['เวลา','HN','ชื่อ','องค์กร','ระดับ','ระยะเวลา','ประเด็นหลัก'];
+  const tsv=[head,...rows.map(r=>[r.t,r.hn,r.name,r.org,LV[r.lvl].name,r.time||'',r.issues])].map(a=>a.join('\t')).join('\n');
+  copyText(tsv,null);
+});
+
+/* ---------- routing ---------- */
+const views=['entry','criteria','flow'];
+function route(){
+  const h=location.hash.replace('#','');const v=views.includes(h)?h:'entry';
+  document.querySelectorAll('[data-view]').forEach(s=>s.hidden=s.dataset.view!==v);
+  document.querySelectorAll('[data-tab]').forEach(a=>{if(a.dataset.tab===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+}
+window.addEventListener('hashchange',()=>{route();window.scrollTo(0,0)});
+route();
+renderToday();
+load('routine');
+})();
+</script>
+</body>
+</html>
