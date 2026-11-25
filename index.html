@@ -249,6 +249,22 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
 .sheet .sys{color:var(--p-sys);font-size:9pt;margin-top:2pt}
 .sheet .lbl{background:var(--p-shade);width:32%}
 .sheet .sign{margin-top:10pt;display:flex;gap:14pt;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 12px;font-size:13.5px;font-weight:500;cursor:pointer;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.sheet+.sheet{margin-top:24px}
+.sheet .overall{border:2px solid var(--p-ink);padding:5pt 8pt;margin-bottom:5pt}
+.sheet .blank.tall{height:90pt}
+.sheet.pt,.sheet.pt table{font-size:11pt}
+.sheet .alert{margin-top:8pt;border:1px solid var(--p-ink);padding:4pt 8pt;font-weight:600}
+.sheet .overall .k{color:var(--p-mute);font-size:9pt}
+.sheet .overall .lv{font-size:14pt;font-weight:700}
+.sheet .kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1pt 8pt}
+.sheet .kv .k{color:var(--p-mute)}
+.sheet ul.fl{margin:0;padding-left:14pt}
+.sheet ul.fl li{margin:1pt 0}
+.sheet ul.fl .adv{color:var(--p-mute)}
 .sheet .foot{margin-top:6pt;font-size:8.5pt;color:var(--p-mute)}
 .sheet .blank{height:34pt}
 @media print{
@@ -260,6 +276,7 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
   .pm{position:static!important;inset:auto!important;height:auto!important;background:none!important;display:block!important}
   .pm-bar{display:none!important}
   .pm-scroll{overflow:visible!important;padding:0!important;height:auto!important}
+  .sheet+.sheet{break-before:page;page-break-before:always;margin-top:0!important}
   .sheet{box-shadow:none!important;margin:0!important;padding:0!important;min-height:0!important;width:auto!important;break-inside:avoid;font-size:9.5pt;line-height:1.35}
   .sheet table{font-size:9.5pt;width:calc(100% - 2px)!important;margin-left:1px!important}
   .sheet{padding:1px!important}
@@ -268,6 +285,9 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
   .sheet td,.sheet th{padding:2pt 5pt!important}
   .sheet .stz{height:1.6in!important}
   .sheet .blank{height:30pt!important}
+  .sheet .blank.tall{height:84pt!important}
+  .sheet.pt,.sheet.pt table{font-size:10.5pt!important}
+  .sheet.pt .foot{font-size:8.5pt}
   .sheet .sign{margin-top:8pt!important}
   .sheet{page-break-inside:avoid;break-after:avoid;page-break-after:avoid}
 }
@@ -447,7 +467,8 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
       </div>
       <div class="row">
         <button type="button" class="btn primary" id="addToday">เพิ่มเข้ารายการวันนี้</button>
-        <button type="button" class="btn" id="openPrint">พิมพ์แบบสรุปผลให้จักษุแพทย์</button>
+        <button type="button" class="btn" id="openPrint">พิมพ์ให้จักษุแพทย์</button>
+        <button type="button" class="btn" id="openPrintCU">พิมพ์ผลให้ผู้รับบริการ</button>
         <button type="button" class="btn danger" data-reset>ล้างข้อมูล เริ่มรายใหม่</button>
         <span class="toast" id="toast" role="status"></span>
       </div>
@@ -644,15 +665,22 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
 </section>
 </main>
 
-<div class="pm" id="printModal" hidden role="dialog" aria-modal="true" aria-label="แบบสรุปผลตรวจตาโดยจักษุแพทย์">
+<div class="pm" id="printModal" hidden role="dialog" aria-modal="true" aria-label="ตัวอย่างก่อนพิมพ์">
   <div class="pm-bar">
-    <span>ตัวอย่างก่อนพิมพ์ · A4</span>
+    <div class="row">
+      <span>ตัวอย่างก่อนพิมพ์ · A4</span>
+      <div class="seg" role="group" aria-label="เลือกเอกสาร">
+        <button type="button" data-doc="eye">ให้จักษุแพทย์</button>
+        <button type="button" data-doc="cu">ผลให้ผู้รับบริการ</button>
+        <button type="button" data-doc="both">ทั้ง 2 ใบ</button>
+      </div>
+    </div>
     <div class="row">
       <button type="button" class="btn primary" id="doPrint">พิมพ์</button>
       <button type="button" class="btn" id="closePrint">ปิด</button>
     </div>
   </div>
-  <div class="pm-scroll"><div class="sheet" id="printForm"></div></div>
+  <div class="pm-scroll"><div id="printArea"></div></div>
 </div>
 
 <script>
@@ -976,7 +1004,7 @@ function recs(r){
   const has=fn=>r.F.some(f=>f.level>0&&fn(f));
   return {
     glasses:has(f=>/แว่น/.test(f.advice)),
-    retina:has(f=>/จอตา/.test(f.advice)),
+    retina:has(f=>/จอตาขยาย|จอตาปีละ/.test(f.advice)),
     glaucoma:has(f=>/ต้อหิน/.test(f.advice)||(f.test==='ความดันลูกตา'&&f.level>=2)),
     iop:has(f=>f.test==='ความดันลูกตา'&&/วัดซ้ำ/.test(f.advice)),
     color:has(f=>f.test==='ตาบอดสี'&&/ทวนซ้ำ/.test(f.advice))
@@ -1039,12 +1067,126 @@ function buildPrint(d,r){
 <div class="sign"><span>ลงชื่อจักษุแพทย์ ${val(null,true)}</span><span>เลขที่ใบอนุญาต ${val(null)}</span><span>วันที่ ${val(null)}</span></div>
 <p class="foot">ค่าตรวจกรอกจากระบบคัดกรองตา Check-up · ข้อความสีน้ำเงิน "ระบบเสนอ" เป็นผลแปลอัตโนมัติเพื่อประกอบการพิจารณา จักษุแพทย์เป็นผู้ยืนยัน</p>`;
 }
-let lastFocus=null;
-$('openPrint').addEventListener('click',()=>{
+/* ---------- patient result sheet (plain language) ---------- */
+function ptPhrase(f){
+  const t=strip(f.text);
+  const side=/ทั้งสองตา/.test(t)?'ทั้งสองตา':/ตาขวา/.test(t)?'ตาขวา':/ตาซ้าย/.test(t)?'ตาซ้าย':'';
+  const sd=side?side+' ':'';
+  if(f.test==='อาการเตือน') return `มีอาการ${t} ควรพบจักษุแพทย์วันนี้`;
+  if(f.test==='VA'){
+    if(f.level===1&&/ติดตามอยู่แล้ว/.test(t)) return `${sd}มองเห็นได้น้อย ซึ่งทราบสาเหตุและติดตามกับจักษุแพทย์อยู่แล้ว ควรไปตามนัดเดิม`;
+    if(f.level===1) return `${sd}มองไม่ชัดจากปัญหาค่าสายตา แก้ไขได้ด้วยแว่นสายตาที่เหมาะสม`;
+    if(/รุนแรง/.test(t)) return `${sd}มองเห็นได้น้อยมาก ควรพบจักษุแพทย์โดยเร็ว`;
+    if(/ปานกลาง/.test(t)) return `${sd}มองเห็นได้ค่อนข้างน้อย ควรให้จักษุแพทย์ตรวจหาสาเหตุ`;
+    return `${sd}มองเห็นไม่ชัดเท่าที่ควร แม้ทดสอบแก้ด้วยเลนส์แล้ว ควรให้จักษุแพทย์ตรวจหาสาเหตุ เช่น ต้อกระจก หรือโรคจอตา`;
+  }
+  if(f.test==='Auto refraction'){
+    if(/วัดค่าไม่ได้/.test(t)) return f.level>=2?`เครื่องวัดค่าสายตา${side}ไม่ได้ ร่วมกับการมองเห็นลดลง อาจมีเลนส์ตาขุ่น (ต้อกระจก) ควรให้จักษุแพทย์ตรวจ`:`เครื่องวัดค่าสายตา${side}ไม่ได้ในครั้งนี้ ควรวัดซ้ำในการตรวจครั้งถัดไป`;
+    if(/anisometropia/.test(t)) return 'ค่าสายตาสองข้างต่างกันมาก ควรวัดสายตาเพื่อตัดแว่นที่เหมาะสม';
+    if(/สั้นมาก/.test(t)) return f.level>=2?`${sd}สายตาสั้นมาก ควรให้จักษุแพทย์ตรวจจอประสาทตา`:`${sd}สายตาสั้นมาก ควรตรวจจอประสาทตาปีละครั้ง หากเห็นแสงวาบหรือเงาม่านบังตาให้พบแพทย์ทันที`;
+    if(/ยาวมาก/.test(t)) return `${sd}สายตายาวมาก ควรวัดสายตาเพื่อตัดแว่น`;
+    if(/เอียงมาก/.test(t)) return `${sd}สายตาเอียงมาก ควรให้จักษุแพทย์ตรวจกระจกตา`;
+  }
+  if(f.test==='ความดันลูกตา'){
+    if(/สองตาต่างกัน/.test(t)) return 'ความดันลูกตาสองข้างต่างกันมาก ควรให้จักษุแพทย์ตรวจ';
+    if(/ต่ำ/.test(t)) return `${sd}ความดันลูกตาต่ำกว่าปกติ ควรให้จักษุแพทย์ตรวจ`;
+    if(/ปัจจัยเสี่ยง/.test(t)) return `${sd}ความดันลูกตาสูงกว่าปกติเล็กน้อย ร่วมกับมีความเสี่ยงโรคต้อหิน ควรให้จักษุแพทย์ตรวจ`;
+    if(/ก้ำกึ่ง/.test(t)) return `${sd}ความดันลูกตาสูงกว่าปกติเล็กน้อย ควรวัดซ้ำในการตรวจครั้งถัดไป`;
+    if(/วิกฤต/.test(t)) return `${sd}ความดันลูกตาสูงมากผิดปกติ ต้องพบจักษุแพทย์วันนี้`;
+    if(/สูงมาก/.test(t)) return `${sd}ความดันลูกตาสูงมาก ควรพบจักษุแพทย์โดยเร็ว`;
+    return `${sd}ความดันลูกตาสูง อาจเป็นความเสี่ยงของโรคต้อหิน ควรให้จักษุแพทย์ตรวจ`;
+  }
+  if(f.test==='ตาบอดสี'){
+    if(/เกิดภายหลัง/.test(t)) return 'การมองเห็นสีผิดปกติ ซึ่งอาจเกิดจากโรคของจอตาหรือประสาทตา ควรให้จักษุแพทย์ตรวจ';
+    if(/แต่กำเนิด/.test(t)) return 'มีภาวะการมองเห็นสีบกพร่อง (ตาบอดสี) ซึ่งมักเป็นมาแต่กำเนิด ไม่เป็นอันตรายต่อสุขภาพตา และไม่ต้องรักษา';
+    return 'ผลการมองเห็นสีก้ำกึ่ง ควรตรวจซ้ำ';
+  }
+  if(f.test==='ประวัติ'){
+    if(/เบาหวาน/.test(t)) return 'เป็นเบาหวาน ควรตรวจจอประสาทตาปีละครั้ง';
+    if(/ต้อหิน/.test(t)) return 'มีญาติเป็นโรคต้อหิน ควรตรวจคัดกรองต้อหินอย่างละเอียดทุก 1–2 ปี';
+  }
+  return t;
+}
+function buildCheckup(d,r){
+  const vaT=i=>i==null?null:VA[i][0];
+  const ar=e=>d.ar[e];
+  const arCell=e=>{const a=ar(e);if(a.err)return 'วัดไม่ได้';return `S ${val(a.sph==null?null:fmtD(a.sph))} C ${val(a.sph==null&&a.cyl==null?null:fmtD(a.cyl||0))}<br>A ${val(a.ax)}`};
+  const ed=ED[d.col.ed];
+  const ishi=e=>`อ่านถูก ${val(d.col[e])} จาก ${ed.max} แผ่น`;
+  const PL=['ปกติ','ควรดูแล / ติดตาม','ควรพบจักษุแพทย์','ควรพบจักษุแพทย์โดยเร็ว','พบจักษุแพทย์วันนี้'];
+  const tl=t=>{const f=r.F.filter(x=>x.test===t);return f.length?PL[Math.max(...f.map(x=>x.level))]:'ไม่ได้ตรวจ'};
+  const OV=[
+    ['ปกติ','ผลการตรวจคัดกรองสายตาอยู่ในเกณฑ์ปกติ'],
+    ['พบข้อควรดูแลเล็กน้อย','ยังไม่จำเป็นต้องพบจักษุแพทย์จากการตรวจครั้งนี้ โปรดทำตามคำแนะนำด้านล่าง'],
+    [`ควรพบจักษุแพทย์เพื่อตรวจยืนยัน ${r.time||''}`,'ผลนี้เป็นการตรวจคัดกรอง ยังไม่ใช่การวินิจฉัยโรค'],
+    ['ควรพบจักษุแพทย์โดยเร็ว ภายใน 1 สัปดาห์','ผลนี้เป็นการตรวจคัดกรอง ยังไม่ใช่การวินิจฉัยโรค'],
+    ['ควรพบจักษุแพทย์วันนี้','เจ้าหน้าที่จะพาไปพบแพทย์']
+  ][r.lvl];
+  const appt=r.lvl===2||r.lvl===3?`<div style="margin-top:3pt">วันนัดพบจักษุแพทย์ ${val(null,true)} เวลา ${val(null)}</div>`:'';
+  const jobN={driver:'งานขับขี่ / ควบคุมเครื่องจักร',color:'งานที่ต้องแยกสี'};
+  const occ=r.occ.filter(o=>o.ok!==null).map(o=>{const j=/ขับขี่/.test(o.t)?jobN.driver:jobN.color;return o.ok?`ผ่านเกณฑ์การมองเห็นสำหรับ${j}`:`ยังไม่ผ่านเกณฑ์การมองเห็นสำหรับ${j} แพทย์อาชีวเวชศาสตร์จะประเมินเพิ่มเติม`});
+  const ab=r.F.filter(f=>f.level>0).sort((a,b)=>b.level-a.level);
+  const items=[...new Set(ab.map(ptPhrase))];
+  const rc=recs(r);
+  const chk=[
+    [rc.glasses,'วัดสายตาเพื่อตัดแว่น หรือเปลี่ยนแว่นให้เหมาะสม'],
+    [r.lvl>=2,`พบจักษุแพทย์ตามนัด${r.time?' '+r.time:''}`],
+    [rc.retina,'ตรวจจอประสาทตาโดยการหยอดยาขยายม่านตา ปีละครั้ง'],
+    [rc.glaucoma,'ตรวจคัดกรองโรคต้อหินอย่างละเอียด'],
+    [rc.iop,'วัดความดันลูกตาซ้ำในการตรวจครั้งถัดไป'],
+    [rc.color,'ตรวจการมองเห็นสีซ้ำ'],
+    [(d.age||0)>=40,'ตรวจสุขภาพตาโดยละเอียดทุก 1–2 ปี (อายุตั้งแต่ 40 ปี)'],
+    [r.lvl===0&&(d.age||0)<40,'ตรวจคัดกรองสายตาประจำปีตามปกติ']
+  ];
+  return `
+<h1>ผลตรวจคัดกรองตา</h1>
+<p class="lead">การตรวจคัดกรองสายตาเบื้องต้นจากการตรวจสุขภาพ</p>
+<table><tr>
+<td class="stk sticker">
+  <div class="stz"><span>แปะสติ๊กเกอร์ผู้รับบริการ</span><span>(ชื่อ–สกุล / HN / อายุ / วันที่ตรวจ)</span></div>
+  <div class="nsg"><div>ลงชื่อพยาบาลผู้ตรวจ</div><div class="ln"></div><div class="pn">(<span></span>)</div></div>
+</td>
+<td>
+  <div class="overall"><div class="k">ผลการตรวจโดยรวม</div><div class="lv">${OV[0]}</div><div>${OV[1]}</div>${appt}</div>
+  ${occ.map(o=>`<div>${o}</div>`).join('')}
+</td></tr></table>
+
+<table style="margin-top:8pt">
+<tr><th style="width:24%">รายการตรวจ</th><th style="width:20%">ตาขวา</th><th style="width:20%">ตาซ้าย</th><th style="width:17%">ค่าปกติ</th><th>ผล</th></tr>
+<tr><td>ความชัดของการมองเห็น (VA)</td><td>${val(vaT(d.va.od))}${d.ph.od!=null?`<br>ทดสอบแก้ด้วยเลนส์ ${val(vaT(d.ph.od))}`:''}</td><td>${val(vaT(d.va.os))}${d.ph.os!=null?`<br>ทดสอบแก้ด้วยเลนส์ ${val(vaT(d.ph.os))}`:''}</td><td>20/30 หรือดีกว่า</td><td>${tl('VA')}</td></tr>
+<tr><td>การมองเห็นสี (ตาบอดสี)</td><td>${ishi('od')}</td><td>${ishi('os')}</td><td>อ่านถูกตั้งแต่ ${ed.ok} แผ่น</td><td>${tl('ตาบอดสี')}</td></tr>
+<tr><td>ค่าสายตา (สั้น / ยาว / เอียง)</td><td>${arCell('od')}</td><td>${arCell('os')}</td><td>ใช้ประกอบการตัดแว่น</td><td>${tl('Auto refraction')}</td></tr>
+<tr><td>ความดันลูกตา</td><td>${val(d.iop.od)} mmHg</td><td>${val(d.iop.os)} mmHg</td><td>6–21 mmHg</td><td>${tl('ความดันลูกตา')}</td></tr>
+</table>
+<p class="foot" style="margin-top:3pt">ค่าสายตา: S ติดลบ = สายตาสั้น, S บวก = สายตายาว, C = สายตาเอียง, A = แนวของสายตาเอียง · ความชัด 20/20 คือการมองเห็นปกติ ตัวเลขหลังยิ่งมาก ยิ่งมองไม่ชัด</p>
+
+<h2>สิ่งที่พบจากการตรวจ</h2>
+<ul class="fl">${items.length?items.map(t=>`<li>${esc(t)}</li>`).join(''):'<li>ผลการตรวจทุกรายการอยู่ในเกณฑ์ปกติ</li>'}</ul>
+
+<h2>คำแนะนำ</h2>
+<div class="gr" style="row-gap:3pt">${chk.map(([on,t])=>cb(on,t)).join('')}</div>
+<div style="margin-top:4pt">${cb(false,'อื่น ๆ')}<span class="v" style="min-width:75%;text-align:left">&nbsp;</span></div>
+<div style="margin-top:6pt"><span class="v" style="min-width:100%;display:block">&nbsp;</span></div>
+
+<div class="alert">หากมีอาการตามัวทันที ปวดตามาก ตาแดง เห็นแสงวาบ หรือมีเงาม่านบังตา ให้รีบพบแพทย์ทันที</div>
+
+<div class="sign"><span>ลงชื่อแพทย์ผู้แจ้งผล ${val(null,true)}</span><span>วันที่ ${val(null)}</span></div>
+<p class="foot">ผลนี้เป็นการตรวจคัดกรองเบื้องต้น ไม่ใช่การวินิจฉัยโรค กรณีนัดพบจักษุแพทย์ ผลสุดท้ายขึ้นกับการตรวจของจักษุแพทย์</p>`;
+}
+let lastFocus=null, pdoc='eye';
+function showDoc(doc){
+  pdoc=doc;const {d,r}=current;
+  const eye=`<div class="sheet">${buildPrint(d,r)}</div>`, cu=`<div class="sheet pt">${buildCheckup(d,r)}</div>`;
+  $('printArea').innerHTML=doc==='eye'?eye:doc==='cu'?cu:cu+eye;
+  document.querySelectorAll('.seg [data-doc]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.doc===doc)));
+}
+function openPM(doc){
   if(!current||current.r.lvl<0){toast('ยังไม่มีผลตรวจให้พิมพ์');return}
-  $('printForm').innerHTML=buildPrint(current.d,current.r);
-  lastFocus=document.activeElement;$('printModal').hidden=false;$('doPrint').focus();
-});
+  showDoc(doc);lastFocus=document.activeElement;$('printModal').hidden=false;$('doPrint').focus();
+}
+$('openPrint').addEventListener('click',()=>openPM('eye'));
+$('openPrintCU').addEventListener('click',()=>openPM('cu'));
+document.querySelectorAll('.seg [data-doc]').forEach(b=>b.addEventListener('click',()=>showDoc(b.dataset.doc)));
 const closePM=()=>{$('printModal').hidden=true;lastFocus&&lastFocus.focus()};
 $('closePrint').addEventListener('click',closePM);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('printModal').hidden)closePM()});
