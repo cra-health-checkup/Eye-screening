@@ -136,6 +136,8 @@ pre.msg{white-space:pre-wrap;word-break:break-word;margin:0;font-family:var(--f-
 .btn:hover{border-color:var(--accent)}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.small{padding:3px 9px;font-size:12.5px}
+.card.his{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.mono-note{font-family:var(--f-data);font-size:12.5px;line-height:1.55}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .toast{font-size:12.5px;color:var(--l0)}
 .badge-ex{font-size:11.5px;padding:2px 8px;border-radius:6px;background:var(--sunk);color:var(--muted)}
@@ -426,6 +428,10 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
       <div class="card">
         <h4>ผลรายการตรวจ <span class="badge-ex" id="exTag" hidden>ข้อมูลตัวอย่าง</span></h4>
         <ul class="findings" id="findings"></ul>
+      </div>
+      <div class="card his">
+        <h4>สรุปผลสำหรับบันทึก HIS <button type="button" class="btn small primary" data-copy="msgHIS">คัดลอกไป HIS</button></h4>
+        <pre class="msg mono-note" id="msgHIS"></pre>
       </div>
       <div class="card" id="occCard" hidden>
         <h4>ความเหมาะสมกับงาน</h4>
@@ -810,6 +816,32 @@ function interpret(d){
 }
 
 /* ---------- messages ---------- */
+function hisMsg(d,r){
+  if(r.lvl<0) return 'ยังไม่มีผลตรวจ';
+  const v=i=>i==null?'—':VA[i][0];
+  const vaE=e=>d.va[e]==null?'—':v(d.va[e])+(d.ph[e]!=null?` (PH ${v(d.ph[e])})`:'');
+  const arE=e=>{const a=d.ar[e];if(a.err)return 'ERR';if(a.sph==null)return '—';return `${fmtD(a.sph)} ${fmtD(a.cyl||0)} x ${a.ax??'—'} (SE ${fmtD(se(a))})`};
+  const ed=ED[d.col.ed];
+  const hx=[d.dm&&'DM',d.fhg&&'FHx glaucoma',d.follow&&'F/U ophthalmologist',d.glasses&&'with glasses/CL'].filter(Boolean);
+  const L=[];
+  L.push(`Eye screening (Check-up) ${today()}`);
+  L.push(`Red flags: ${d.rf.length?d.rf.map(k=>RF[k]).join(', '):d.rfNone?'none':'not assessed'}`);
+  if(hx.length) L.push(`Hx: ${hx.join(', ')}`);
+  L.push(`VA: OD ${vaE('od')} | OS ${vaE('os')}`);
+  L.push(`Ishihara (${d.col.ed} plates): OD ${d.col.od??'—'}/${ed.max} | OS ${d.col.os??'—'}/${ed.max}`);
+  L.push(`Auto-ref: OD ${arE('od')} | OS ${arE('os')}`);
+  L.push(`IOP (NCT): OD ${d.iop.od??'—'} | OS ${d.iop.os??'—'} mmHg`);
+  const ab=r.F.filter(f=>f.level>0).sort((a,b)=>b.level-a.level);
+  L.push('Impression:');
+  if(ab.length) ab.forEach(f=>L.push(`- ${strip(f.text)}`)); else L.push('- ผลคัดกรองตาอยู่ในเกณฑ์ปกติ');
+  const rc=recs(r);
+  const rl=[rc.glasses&&'วัดแว่น',rc.retina&&'ตรวจจอตาขยายม่านตา',rc.glaucoma&&'ตรวจต้อหิน',rc.iop&&'วัดความดันลูกตาซ้ำ',rc.color&&'ทวนตาบอดสีซ้ำ'].filter(Boolean);
+  L.push(`Plan: ${r.lvl===2?'นัดพบจักษุแพทย์':r.lvl>2?LV[r.lvl].name+' พบจักษุแพทย์':LV[r.lvl].name}${r.time?' '+r.time:''}`);
+  if(rl.length) L.push(`Advice: ${rl.join(', ')}`);
+  r.occ.forEach(o=>L.push(`Fitness: ${o.t}`));
+  if(r.missing.length&&r.lvl<4) L.push(`Pending: ${r.missing.join(', ')}`);
+  return L.join('\n').replace(/→/g,'->').replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/−/g,'-').replace(/–/g,'-').replace(/✓/g,'');
+}
 function today(){const t=new Date();return t.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'})}
 function strip(h){const x=document.createElement('div');x.innerHTML=h;return x.textContent}
 function patientMsg(d,r){
@@ -886,6 +918,7 @@ function render(){
   $('occCard').hidden=!r.occ.length;
   $('occ').innerHTML=r.occ.map(o=>`<p class="occ${o.ok===false?' fail':''}" style="margin:0 0 4px">${o.ok===true?'ผ่าน · ':o.ok===false?'ไม่ผ่าน · ':'รอผล · '}${o.t}</p>`).join('');
   $('msgPatient').textContent=patientMsg(d,r);
+  $('msgHIS').textContent=hisMsg(d,r);
   $('consultCard').hidden=r.lvl<2;
   if(r.lvl>=2) $('msgConsult').textContent=consultMsg(d,r);
 }
