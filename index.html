@@ -151,6 +151,21 @@ th{font-size:12.5px;color:var(--muted);font-weight:600;background:var(--sunk);wh
 tr:last-child td{border-bottom:0}
 .empty{padding:18px;color:var(--muted);font-size:14px}
 .counts{display:flex;gap:8px;flex-wrap:wrap}
+.gs{margin-top:14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.gs summary{cursor:pointer;padding:10px 14px;font-weight:600;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gs-state{font-size:12.5px;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.gs-state.on{background:var(--l0s);color:var(--l0)}
+.gs-body{padding:0 14px 14px}
+.gs summary{list-style:none}
+.gs summary::-webkit-details-marker{display:none}
+.gs summary:hover{background:var(--sunk)}
+.gs-chev{color:var(--accent);transition:transform .15s}
+.gs[open] .gs-chev{transform:rotate(90deg)}
+.gs-hint{margin-left:auto;font-size:12.5px;font-weight:500;color:var(--accent)}
+.gs[open] .gs-hint{display:none}
+.sst{font-size:12.5px;font-weight:600;white-space:nowrap}
+.sst.ok{color:var(--l0)} .sst.err{color:var(--l4)} .sst.wait{color:var(--muted)}
+.sst button{margin-left:6px}
 
 /* criteria */
 .crit{display:grid;gap:18px}
@@ -470,7 +485,7 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
         <pre class="msg" id="msgConsult"></pre>
       </div>
       <div class="row">
-        <button type="button" class="btn primary" id="addToday">เพิ่มเข้ารายการวันนี้</button>
+        <button type="button" class="btn primary" id="addToday">บันทึกผล</button>
         <button type="button" class="btn" id="openPrint">พิมพ์ให้จักษุแพทย์</button>
         <button type="button" class="btn" id="openPrintCU">พิมพ์ผลให้ผู้รับบริการ</button>
         <button type="button" class="btn danger" data-reset>ล้างข้อมูล เริ่มรายใหม่</button>
@@ -483,7 +498,7 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
     <div class="view-head">
       <div>
         <h2 style="font-size:20px">รายการวันนี้</h2>
-        <p>เก็บไว้ในหน้านี้เท่านั้น ปิดหน้าแล้วข้อมูลหาย คัดลอกเป็นตารางเพื่อวางใน Excel หรือระบบนัดได้</p>
+        <p>กด "บันทึกผล" แล้วรายการจะขึ้นที่นี่ และส่งเข้า Google Sheet ถ้าเชื่อมต่อไว้ ตารางนี้อยู่ในหน้านี้เท่านั้น ปิดหน้าแล้วหาย</p>
       </div>
       <div class="row">
         <div class="counts" id="counts"></div>
@@ -492,10 +507,27 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
     </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>เวลา</th><th>HN</th><th>ชื่อ</th><th>องค์กร</th><th>ระดับ</th><th>ระยะเวลา</th><th>ประเด็นหลัก</th></tr></thead>
+        <thead><tr><th>เวลา</th><th>HN</th><th>ชื่อ</th><th>องค์กร</th><th>ระดับ</th><th>ระยะเวลา</th><th>ประเด็นหลัก</th><th>Google Sheet</th></tr></thead>
         <tbody id="todayBody"></tbody>
       </table>
     </div>
+
+    <details class="gs" id="gsPanel">
+      <summary><span class="gs-chev" aria-hidden="true">▸</span><span>เชื่อมต่อ Google Sheet</span> <span class="gs-state" id="gsState">ยังไม่ได้เชื่อมต่อ</span><span class="gs-hint">กดเพื่อตั้งค่า</span></summary>
+      <div class="gs-body">
+        <p class="hint">ใส่ URL ของ Web App และ API key จาก Apps Script ของชีตบันทึกผล ตั้งค่าครั้งเดียวต่อเครื่อง ระบบจะส่ง HN อายุ เพศ องค์กร และผลตรวจ โดยไม่ส่งชื่อ–สกุล</p>
+        <div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr)">
+          <label class="f">Web App URL<input type="text" id="gsUrl" placeholder="https://script.google.com/macros/s/.../exec" spellcheck="false"></label>
+          <label class="f">API key<input type="text" id="gsKey" spellcheck="false" autocomplete="off"></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button type="button" class="btn primary" id="gsSave">บันทึกการตั้งค่า</button>
+          <button type="button" class="btn" id="gsTest">ทดสอบการเชื่อมต่อ</button>
+          <button type="button" class="btn" id="gsClear">ยกเลิกการเชื่อมต่อ</button>
+          <span class="toast" id="gsMsg" role="status"></span>
+        </div>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -970,7 +1002,7 @@ function clearForm(){
   updColMax();
 }
 function load(key){
-  clearForm(); const x=EX[key];
+  saved=null;clearForm(); const x=EX[key];
   Object.entries(x).forEach(([k,v])=>{const el=$(k);if(!el)return;if(el.type==='checkbox')el.checked=!!v;else el.value=v});
   updColMax();
   $('exSel').value=key;
@@ -978,7 +1010,7 @@ function load(key){
 }
 function updColMax(){const m=ED[$('col_ed').value].max;document.querySelectorAll('.col_max').forEach(e=>e.textContent='/'+m);$('col_n_od').max=m;$('col_n_os').max=m}
 $('exSel').addEventListener('change',()=>{const k=$('exSel').value;if(k)load(k);else resetAll(false)});
-function resetAll(scroll){clearForm();$('exSel').value='';$('exTag').hidden=true;render();if(scroll){window.scrollTo(0,0);try{$('hn').focus({preventScroll:true})}catch(e){}}toast('ล้างข้อมูลแล้ว')}
+function resetAll(scroll){saved=null;clearForm();$('exSel').value='';$('exTag').hidden=true;render();if(scroll){window.scrollTo(0,0);try{$('hn').focus({preventScroll:true})}catch(e){}}toast('ล้างข้อมูลแล้ว')}
 document.querySelectorAll('[data-reset]').forEach(b=>b.addEventListener('click',()=>resetAll(true)));
 $('col_ed').addEventListener('change',updColMax);
 const onEdit=e=>{
@@ -1195,20 +1227,84 @@ $('closePrint').addEventListener('click',closePM);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('printModal').hidden)closePM()});
 $('doPrint').addEventListener('click',()=>{try{window.print()}catch(e){}});
 
-/* ---------- today list (in-memory) ---------- */
+/* ---------- today list + Google Sheet ---------- */
 const rows=[];
+let saved=null; // {id, hn} of the patient on screen
+const GS={url:'',key:''};
+try{GS.url=localStorage.getItem('gsUrl')||'';GS.key=localStorage.getItem('gsKey')||''}catch(e){}
+const gsOn=()=>/^https:\/\/script\.google(usercontent)?\.com\//.test(GS.url)&&!!GS.key;
+function gsState(){$('gsState').textContent=gsOn()?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';$('gsState').classList.toggle('on',gsOn());$('gsUrl').value=GS.url;$('gsKey').value=GS.key}
+function newId(){const t=new Date(),p=n=>String(n).padStart(2,'0');return `EYE-${t.getFullYear()}${p(t.getMonth()+1)}${p(t.getDate())}-${p(t.getHours())}${p(t.getMinutes())}${p(t.getSeconds())}-${Math.random().toString(36).slice(2,6)}`}
+function buildRecord(id,d,r){
+  const v=i=>i==null?'':VA[i][0];
+  const t=new Date(),p=n=>String(n).padStart(2,'0');
+  const a=e=>d.ar[e];
+  const num=x=>x==null?'':x;
+  const rc=recs(r);
+  return {
+    record_id:id,exam_date:`${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())}`,exam_time:`${p(t.getHours())}:${p(t.getMinutes())}`,
+    hn:d.hn,age:num(d.age),sex:d.sex,org:d.org,job:{general:'ทั่วไป / สำนักงาน',driver:'ขับขี่ / ควบคุมเครื่องจักร',color:'งานที่ต้องแยกสี'}[d.job],examiner:d.examiner,
+    red_flags:d.rf.length?d.rf.map(k=>RF[k]).join(', '):d.rfNone?'ไม่มี':'ยังไม่ได้ประเมิน',
+    history:[d.dm&&'เบาหวาน',d.fhg&&'ญาติเป็นต้อหิน',d.follow&&'ติดตามกับจักษุแพทย์อยู่แล้ว',d.glasses&&'ใส่แว่น/คอนแทคเลนส์'].filter(Boolean).join(', '),
+    va_od:v(d.va.od),ph_od:v(d.ph.od),va_os:v(d.va.os),ph_os:v(d.ph.os),
+    ishihara_set:Number(d.col.ed),ishihara_od:num(d.col.od),ishihara_os:num(d.col.os),
+    sph_od:a('od').err?'':num(a('od').sph),cyl_od:a('od').err?'':num(a('od').cyl),axis_od:a('od').err?'':num(a('od').ax),se_od:a('od').err||a('od').sph==null?'':+se(a('od')).toFixed(2),
+    sph_os:a('os').err?'':num(a('os').sph),cyl_os:a('os').err?'':num(a('os').cyl),axis_os:a('os').err?'':num(a('os').ax),se_os:a('os').err||a('os').sph==null?'':+se(a('os')).toFixed(2),
+    iop_od:num(d.iop.od),iop_os:num(d.iop.os),
+    level_code:r.lvl,level:LV[r.lvl].name,timeframe:r.time||'',
+    findings:r.F.filter(f=>f.level>0).sort((x,y)=>y.level-x.level).map(f=>strip(f.text)).join('\n'),
+    advice:[rc.glasses&&'วัดแว่น',rc.retina&&'ตรวจจอตาขยายม่านตา',rc.glaucoma&&'ตรวจต้อหิน',rc.iop&&'วัดความดันลูกตาซ้ำ',rc.color&&'ทวนตาบอดสีซ้ำ'].filter(Boolean).join(', '),
+    fitness:r.occ.map(o=>o.t).join('\n'),pending:r.missing.join(', '),his_note:hisMsg(d,r)
+  };
+}
+async function gsSend(row){
+  row.sheet='wait';renderToday();
+  try{
+    const res=await fetch(GS.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:GS.key,record:row.rec})});
+    const j=await res.json();
+    if(!j.ok) throw new Error(j.error||'ไม่สำเร็จ');
+    row.sheet='ok';row.err='';
+  }catch(e){row.sheet='err';row.err=e.message==='Failed to fetch'?'เชื่อมต่อไม่ได้':e.message}
+  renderToday();
+  if(row.sheet==='err') toast('ส่งเข้า Google Sheet ไม่สำเร็จ: '+row.err);
+}
+function sheetCell(r){
+  if(!r.sheet) return '<span class="sst wait">ไม่ได้ส่ง</span>';
+  if(r.sheet==='wait') return '<span class="sst wait">กำลังส่ง…</span>';
+  if(r.sheet==='ok') return '<span class="sst ok">บันทึกแล้ว ✓</span>';
+  return `<span class="sst err" title="${esc(r.err)}">ไม่สำเร็จ<button type="button" class="btn small" data-resend="${r.id}">ส่งใหม่</button></span>`;
+}
 function renderToday(){
   const tb=$('todayBody');
-  tb.innerHTML=rows.length?rows.map(r=>`<tr><td class="num">${r.t}</td><td class="num">${r.hn||'—'}</td><td>${r.name||'—'}</td><td>${r.org||'—'}</td><td><span class="chip L${r.lvl}">${LV[r.lvl].name}</span></td><td>${r.time||'—'}</td><td>${r.issues||'—'}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">ยังไม่มีรายการ กด "เพิ่มเข้ารายการวันนี้" หลังแปลผลแต่ละราย</td></tr>`;
+  tb.innerHTML=rows.length?rows.map(r=>`<tr><td class="num">${r.t}</td><td class="num">${esc(r.hn)||'—'}</td><td>${esc(r.name)||'—'}</td><td>${esc(r.org)||'—'}</td><td><span class="chip L${r.lvl}">${LV[r.lvl].name}</span></td><td>${r.time||'—'}</td><td>${esc(r.issues)||'—'}</td><td>${sheetCell(r)}</td></tr>`).join(''):`<tr><td colspan="8" class="empty">ยังไม่มีรายการ กด "บันทึกผล" หลังแปลผลแต่ละราย</td></tr>`;
   $('counts').innerHTML=[0,1,2,3,4].map(i=>{const n=rows.filter(r=>r.lvl===i).length;return n?`<span class="chip L${i}">${LV[i].name} ${n}</span>`:''}).join('');
 }
+$('todayBody').addEventListener('click',e=>{const b=e.target.closest('[data-resend]');if(!b)return;const row=rows.find(r=>r.id===b.dataset.resend);if(row&&gsOn())gsSend(row)});
 $('addToday').addEventListener('click',()=>{
   if(!current||current.r.lvl<0){toast('ยังไม่มีผลตรวจให้บันทึก');return}
   const {d,r}=current;
+  if(!saved||saved.hn!==d.hn) saved={id:newId(),hn:d.hn};
   const issues=r.F.filter(f=>f.level===r.lvl&&r.lvl>0).map(f=>strip(f.text)).join('; ');
-  rows.unshift({t:new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}),hn:d.hn,name:d.name,org:d.org,lvl:r.lvl,time:r.time,issues});
-  renderToday(); toast('เพิ่มแล้ว');
+  const item={id:saved.id,t:new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}),hn:d.hn,name:d.name,org:d.org,lvl:r.lvl,time:r.time,issues,rec:buildRecord(saved.id,d,r),sheet:''};
+  const i=rows.findIndex(x=>x.id===saved.id);
+  if(i>=0){rows[i]=item;toast('อัปเดตรายการเดิมแล้ว')}else{rows.unshift(item);toast('บันทึกแล้ว')}
+  renderToday();
+  if(gsOn()) gsSend(item);
 });
+$('gsSave').addEventListener('click',()=>{
+  GS.url=$('gsUrl').value.trim();GS.key=$('gsKey').value.trim();
+  try{localStorage.setItem('gsUrl',GS.url);localStorage.setItem('gsKey',GS.key)}catch(e){}
+  gsState();$('gsMsg').textContent=gsOn()?'บันทึกการตั้งค่าแล้ว':'URL ต้องขึ้นต้นด้วย https://script.google.com/ และต้องมี API key';
+});
+$('gsClear').addEventListener('click',()=>{GS.url='';GS.key='';try{localStorage.removeItem('gsUrl');localStorage.removeItem('gsKey')}catch(e){}gsState();$('gsMsg').textContent='ยกเลิกการเชื่อมต่อแล้ว'});
+$('gsTest').addEventListener('click',async()=>{
+  const url=$('gsUrl').value.trim(),key=$('gsKey').value.trim();
+  $('gsMsg').textContent='กำลังทดสอบ…';
+  try{const res=await fetch(url+(url.includes('?')?'&':'?')+'ping=1&key='+encodeURIComponent(key));const j=await res.json();
+    $('gsMsg').textContent=j.ok?`เชื่อมต่อได้ · ${j.sheet} · มีข้อมูล ${j.records} รายการ`:`ไม่สำเร็จ: ${j.error}`;}
+  catch(e){$('gsMsg').textContent='เชื่อมต่อไม่ได้ ตรวจสอบ URL และการตั้งค่า "ผู้ที่มีสิทธิ์เข้าถึง: ทุกคน"'}
+});
+gsState();
 $('copyTable').addEventListener('click',()=>{
   const head=['เวลา','HN','ชื่อ','องค์กร','ระดับ','ระยะเวลา','ประเด็นหลัก'];
   const tsv=[head,...rows.map(r=>[r.t,r.hn,r.name,r.org,LV[r.lvl].name,r.time||'',r.issues])].map(a=>a.join('\t')).join('\n');
