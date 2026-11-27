@@ -156,6 +156,12 @@ tr:last-child td{border-bottom:0}
 .gs-state{font-size:12.5px;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
 .gs-state.on{background:var(--l0s);color:var(--l0)}
 .gs-body{padding:0 14px 14px}
+.pin{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--ink) 50%,transparent);display:grid;place-items:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pin-box{background:var(--surface);border-radius:var(--r);padding:20px;width:min(420px,100%);display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.pin-box h3{font-size:19px}
+.pin-box p{margin:0;color:var(--muted);font-size:14px}
+.pin-box input{font-size:18px;letter-spacing:.08em}
+.pin-msg{min-height:1.4em;color:var(--l4)!important}
 .gs summary{list-style:none}
 .gs summary::-webkit-details-marker{display:none}
 .gs summary:hover{background:var(--sunk)}
@@ -515,10 +521,10 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
     <details class="gs" id="gsPanel">
       <summary><span class="gs-chev" aria-hidden="true">▸</span><span>เชื่อมต่อ Google Sheet</span> <span class="gs-state" id="gsState">ยังไม่ได้เชื่อมต่อ</span><span class="gs-hint">กดเพื่อตั้งค่า</span></summary>
       <div class="gs-body">
-        <p class="hint">ใส่ URL ของ Web App และ API key จาก Apps Script ของชีตบันทึกผล ตั้งค่าครั้งเดียวต่อเครื่อง ระบบจะส่ง HN อายุ เพศ องค์กร และผลตรวจ โดยไม่ส่งชื่อ–สกุล</p>
+        <p class="hint">URL ของชีตบันทึกผลตั้งไว้ให้แล้ว ใส่แค่รหัสทีมครั้งเดียวต่อเครื่อง ระบบจะส่ง HN อายุ เพศ องค์กร และผลตรวจ โดยไม่ส่งชื่อ–สกุล</p>
         <div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr)">
           <label class="f">Web App URL<input type="text" id="gsUrl" placeholder="https://script.google.com/macros/s/.../exec" spellcheck="false"></label>
-          <label class="f">API key<input type="text" id="gsKey" spellcheck="false" autocomplete="off"></label>
+          <label class="f">รหัสทีม<input type="password" id="gsKey" spellcheck="false" autocomplete="off"></label>
         </div>
         <div class="row" style="margin-top:10px">
           <button type="button" class="btn primary" id="gsSave">บันทึกการตั้งค่า</button>
@@ -700,6 +706,19 @@ legend.st{float:left;width:100%;margin:0;padding:10px 16px;background:none;color
   </div>
 </section>
 </main>
+
+<div class="pin" id="pinModal" hidden role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+  <div class="pin-box">
+    <h3 id="pinTitle">เชื่อมต่อ Google Sheet</h3>
+    <p>ใส่รหัสทีมเพื่อส่งผลเข้า Google Sheet ใส่ครั้งเดียว เครื่องนี้จะจำไว้</p>
+    <label class="f" for="pinInput">รหัสทีม<input type="password" id="pinInput" autocomplete="off" spellcheck="false"></label>
+    <p class="pin-msg" id="pinMsg" role="status"></p>
+    <div class="row">
+      <button type="button" class="btn primary" id="pinOk">เชื่อมต่อ</button>
+      <button type="button" class="btn" id="pinSkip">ข้ามไปก่อน</button>
+    </div>
+  </div>
+</div>
 
 <div class="pm" id="printModal" hidden role="dialog" aria-modal="true" aria-label="ตัวอย่างก่อนพิมพ์">
   <div class="pm-bar">
@@ -1230,8 +1249,10 @@ $('doPrint').addEventListener('click',()=>{try{window.print()}catch(e){}});
 /* ---------- today list + Google Sheet ---------- */
 const rows=[];
 let saved=null; // {id, hn} of the patient on screen
-const GS={url:'',key:''};
-try{GS.url=localStorage.getItem('gsUrl')||'';GS.key=localStorage.getItem('gsKey')||''}catch(e){}
+// Web App URL ของชีตบันทึกผล (ไม่ใช่ความลับ ต้องมีรหัสทีมจึงจะส่งข้อมูลได้)
+const GS_DEFAULT_URL='https://script.google.com/macros/s/AKfycbwg27TLNxxoz8j3plLJnBOiRmLVqvedy3Xyn4imlkjpcSROVzgioDEQCwUoFZEyhBGwzA/exec';
+const GS={url:GS_DEFAULT_URL,key:''};
+try{GS.url=localStorage.getItem('gsUrl')||GS_DEFAULT_URL;GS.key=localStorage.getItem('gsKey')||''}catch(e){}
 const gsOn=()=>/^https:\/\/script\.google(usercontent)?\.com\//.test(GS.url)&&!!GS.key;
 function gsState(){$('gsState').textContent=gsOn()?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';$('gsState').classList.toggle('on',gsOn());$('gsUrl').value=GS.url;$('gsKey').value=GS.key}
 function newId(){const t=new Date(),p=n=>String(n).padStart(2,'0');return `EYE-${t.getFullYear()}${p(t.getMonth()+1)}${p(t.getDate())}-${p(t.getHours())}${p(t.getMinutes())}${p(t.getSeconds())}-${Math.random().toString(36).slice(2,6)}`}
@@ -1290,13 +1311,33 @@ $('addToday').addEventListener('click',()=>{
   if(i>=0){rows[i]=item;toast('อัปเดตรายการเดิมแล้ว')}else{rows.unshift(item);toast('บันทึกแล้ว')}
   renderToday();
   if(gsOn()) gsSend(item);
+  else if(!pinSkipped) askPin(item);
 });
+/* team-code prompt: shown on the first save on a computer */
+let pinSkipped=false, pinRow=null;
+function askPin(row){pinRow=row;$('pinMsg').textContent='';$('pinInput').value='';$('pinModal').hidden=false;$('pinInput').focus()}
+function closePin(){$('pinModal').hidden=true;pinRow=null}
+async function submitPin(){
+  const key=$('pinInput').value.trim(); if(!key){$('pinMsg').textContent='กรุณาใส่รหัสทีม';return}
+  $('pinMsg').textContent='กำลังตรวจสอบ…';$('pinOk').disabled=true;
+  try{
+    const res=await fetch(GS.url+(GS.url.includes('?')?'&':'?')+'ping=1&key='+encodeURIComponent(key));const j=await res.json();
+    if(!j.ok){$('pinMsg').textContent=j.error==='API key ไม่ถูกต้อง'?'รหัสทีมไม่ถูกต้อง':j.error;return}
+    GS.key=key;try{localStorage.setItem('gsKey',key);localStorage.setItem('gsUrl',GS.url)}catch(e){}
+    gsState();const row=pinRow;closePin();toast('เชื่อมต่อ Google Sheet แล้ว');
+    rows.filter(r=>!r.sheet||r.sheet==='err').forEach(r=>gsSend(r));
+  }catch(e){$('pinMsg').textContent='เชื่อมต่อไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'}
+  finally{$('pinOk').disabled=false}
+}
+$('pinOk').addEventListener('click',submitPin);
+$('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitPin()});
+$('pinSkip').addEventListener('click',()=>{pinSkipped=true;closePin();toast('บันทึกเฉพาะรายการวันนี้ ยังไม่ส่งเข้า Google Sheet')});
 $('gsSave').addEventListener('click',()=>{
   GS.url=$('gsUrl').value.trim();GS.key=$('gsKey').value.trim();
   try{localStorage.setItem('gsUrl',GS.url);localStorage.setItem('gsKey',GS.key)}catch(e){}
-  gsState();$('gsMsg').textContent=gsOn()?'บันทึกการตั้งค่าแล้ว':'URL ต้องขึ้นต้นด้วย https://script.google.com/ และต้องมี API key';
+  gsState();$('gsMsg').textContent=gsOn()?'บันทึกการตั้งค่าแล้ว':'URL ต้องขึ้นต้นด้วย https://script.google.com/ และต้องมีรหัสทีม';
 });
-$('gsClear').addEventListener('click',()=>{GS.url='';GS.key='';try{localStorage.removeItem('gsUrl');localStorage.removeItem('gsKey')}catch(e){}gsState();$('gsMsg').textContent='ยกเลิกการเชื่อมต่อแล้ว'});
+$('gsClear').addEventListener('click',()=>{GS.url=GS_DEFAULT_URL;GS.key='';try{localStorage.removeItem('gsUrl');localStorage.removeItem('gsKey')}catch(e){}gsState();$('gsMsg').textContent='ลบรหัสทีมออกจากเครื่องนี้แล้ว'});
 $('gsTest').addEventListener('click',async()=>{
   const url=$('gsUrl').value.trim(),key=$('gsKey').value.trim();
   $('gsMsg').textContent='กำลังทดสอบ…';
