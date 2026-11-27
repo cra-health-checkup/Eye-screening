@@ -172,6 +172,7 @@ tr:last-child td{border-bottom:0}
 .sst{font-size:12.5px;font-weight:600;white-space:nowrap}
 .sst.ok{color:var(--l0)} .sst.err{color:var(--l4)} .sst.wait{color:var(--muted)}
 .sst button{margin-left:6px}
+.sst-why{font-size:12px;color:var(--l4);margin-top:2px;max-width:220px}
 
 /* criteria */
 .crit{display:grid;gap:18px}
@@ -1285,22 +1286,25 @@ async function gsSend(row){
     const j=await res.json();
     if(!j.ok) throw new Error(j.error||'ไม่สำเร็จ');
     row.sheet='ok';row.err='';
-  }catch(e){row.sheet='err';row.err=e.message==='Failed to fetch'?'เชื่อมต่อไม่ได้':e.message}
+  }catch(e){row.sheet='err';row.err=e.message==='Failed to fetch'?'เชื่อมต่อ Google Sheet ไม่ได้':e.message==='API key ไม่ถูกต้อง'?'รหัสทีมไม่ถูกต้อง':e.message}
   renderToday();
-  if(row.sheet==='err') toast('ส่งเข้า Google Sheet ไม่สำเร็จ: '+row.err);
+  if(row.sheet==='err'&&row.err==='รหัสทีมไม่ถูกต้อง'){
+    GS.key='';try{localStorage.removeItem('gsKey')}catch(e){}
+    gsState();pinSkipped=false;askPin(row);$('pinMsg').textContent='รหัสทีมที่เครื่องนี้จำไว้ใช้ไม่ได้แล้ว กรุณาใส่รหัสทีมปัจจุบัน';
+  } else if(row.sheet==='err') toast('ส่งเข้า Google Sheet ไม่สำเร็จ: '+row.err);
 }
 function sheetCell(r){
   if(!r.sheet) return '<span class="sst wait">ไม่ได้ส่ง</span>';
   if(r.sheet==='wait') return '<span class="sst wait">กำลังส่ง…</span>';
   if(r.sheet==='ok') return '<span class="sst ok">บันทึกแล้ว ✓</span>';
-  return `<span class="sst err" title="${esc(r.err)}">ไม่สำเร็จ<button type="button" class="btn small" data-resend="${r.id}">ส่งใหม่</button></span>`;
+  return `<span class="sst err">ไม่สำเร็จ<button type="button" class="btn small" data-resend="${r.id}">ส่งใหม่</button></span><div class="sst-why">${esc(r.err)}</div>`;
 }
 function renderToday(){
   const tb=$('todayBody');
   tb.innerHTML=rows.length?rows.map(r=>`<tr><td class="num">${r.t}</td><td class="num">${esc(r.hn)||'—'}</td><td>${esc(r.name)||'—'}</td><td>${esc(r.org)||'—'}</td><td><span class="chip L${r.lvl}">${LV[r.lvl].name}</span></td><td>${r.time||'—'}</td><td>${esc(r.issues)||'—'}</td><td>${sheetCell(r)}</td></tr>`).join(''):`<tr><td colspan="8" class="empty">ยังไม่มีรายการ กด "บันทึกผล" หลังแปลผลแต่ละราย</td></tr>`;
   $('counts').innerHTML=[0,1,2,3,4].map(i=>{const n=rows.filter(r=>r.lvl===i).length;return n?`<span class="chip L${i}">${LV[i].name} ${n}</span>`:''}).join('');
 }
-$('todayBody').addEventListener('click',e=>{const b=e.target.closest('[data-resend]');if(!b)return;const row=rows.find(r=>r.id===b.dataset.resend);if(row&&gsOn())gsSend(row)});
+$('todayBody').addEventListener('click',e=>{const b=e.target.closest('[data-resend]');if(!b)return;const row=rows.find(r=>r.id===b.dataset.resend);if(!row)return;if(gsOn())gsSend(row);else{pinSkipped=false;askPin(row)}});
 $('addToday').addEventListener('click',()=>{
   if(!current||current.r.lvl<0){toast('ยังไม่มีผลตรวจให้บันทึก');return}
   const {d,r}=current;
